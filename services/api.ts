@@ -23,12 +23,32 @@ const API_CONFIG = {
 
 // 개발 환경에서 사용할 모의(mock) 데이터
 const MOCK_DATA = {
-  dischargeByHour: Array(24)
-    .fill(0)
-    .map((_, hour) => ({
-      hour,
-      dischargeKwh: Math.floor(Math.random() * 5000) + 1000, // 1000 ~ 6000 kWh
-    })),
+  dischargeByHour: [
+    { hour: 0, dischargeKwh: 0 },
+    { hour: 1, dischargeKwh: 0 },
+    { hour: 2, dischargeKwh: 0 },
+    { hour: 3, dischargeKwh: 0 },
+    { hour: 4, dischargeKwh: 0 },
+    { hour: 5, dischargeKwh: 0 },
+    { hour: 6, dischargeKwh: 0 },
+    { hour: 7, dischargeKwh: 0 },
+    { hour: 8, dischargeKwh: 0 },
+    { hour: 9, dischargeKwh: 0 },
+    { hour: 10, dischargeKwh: 54000 },
+    { hour: 11, dischargeKwh: 0 },
+    { hour: 12, dischargeKwh: 15000 },
+    { hour: 13, dischargeKwh: 0 },
+    { hour: 14, dischargeKwh: 12000 },
+    { hour: 15, dischargeKwh: 0 },
+    { hour: 16, dischargeKwh: 8000 },
+    { hour: 17, dischargeKwh: 0 },
+    { hour: 18, dischargeKwh: 10000 },
+    { hour: 19, dischargeKwh: 0 },
+    { hour: 20, dischargeKwh: 0 },
+    { hour: 21, dischargeKwh: 0 },
+    { hour: 22, dischargeKwh: 0 },
+    { hour: 23, dischargeKwh: 0 },
+  ],
 }
 
 // API 요청 함수
