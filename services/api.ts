@@ -6,6 +6,15 @@ export interface DischargeByHourData {
   dischargeKwh: number
 }
 
+export interface ChargerUsageData {
+  timestamp: string
+  chargerLocation: string
+  chargerNumber: string
+  usage: string
+  price: string
+  transactionId: string
+}
+
 export interface ApiResponse<T> {
   data: T
   success: boolean
@@ -49,6 +58,32 @@ const MOCK_DATA = {
     { hour: 22, dischargeKwh: 0 },
     { hour: 23, dischargeKwh: 0 },
   ],
+  chargerUsage: [
+    {
+      timestamp: "2025-05-04T18:28:07",
+      chargerLocation: "서울특별시 중구 세종대로 110",
+      chargerNumber: "R1",
+      usage: "10000(kWh)",
+      price: "5,000(KRW)",
+      transactionId: "tx-001",
+    },
+    {
+      timestamp: "2025-05-04T16:28:07",
+      chargerLocation: "서울특별시 중구 세종대로 110",
+      chargerNumber: "R1",
+      usage: "8000(kWh)",
+      price: "4,000(KRW)",
+      transactionId: "tx-002",
+    },
+    {
+      timestamp: "2025-05-01T10:32:00",
+      chargerLocation: "서울특별시 중구 세종대로 110",
+      chargerNumber: "R1",
+      usage: "45000(kWh)",
+      price: "22,500(KRW)",
+      transactionId: "tx-001",
+    },
+  ],
 }
 
 // API 요청 함수
@@ -70,6 +105,15 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
         setTimeout(() => {
           console.log("모의 데이터:", MOCK_DATA.dischargeByHour)
           resolve(MOCK_DATA.dischargeByHour as unknown as T)
+        }, 800)
+      })
+    }
+
+    if (endpoint === "/dashboard/chargers/usage") {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          console.log("모의 데이터:", MOCK_DATA.chargerUsage)
+          resolve(MOCK_DATA.chargerUsage as unknown as T)
         }, 800)
       })
     }
@@ -132,5 +176,21 @@ export async function fetchDischargeByHour(): Promise<DischargeByHourData[]> {
   }
 }
 
+// 충전기 사용 정보 데이터 가져오기
+export async function fetchChargerUsage(): Promise<ChargerUsageData[]> {
+  try {
+    console.log("충전기 사용 정보 데이터 요청 시작")
+    const data = await apiRequest<ChargerUsageData[]>("/dashboard/chargers/usage")
+    console.log("충전기 사용 정보 데이터 요청 완료:", data)
+    return data
+  } catch (error) {
+    console.error("충전기 사용 정보 데이터를 가져오는 중 오류 발생:", error)
+
+    // 오류 발생 시 모의 데이터 반환 (개발 편의를 위해)
+    console.log("오류 발생으로 모의 데이터 반환")
+    return MOCK_DATA.chargerUsage
+  }
+}
+
 // 다른 API 함수들을 여기에 추가할 수 있습니다.
-// 예: 일일 정보, 충전기 사용 정보, 전기 거래 현황 등
+// 예: 일일 정보, 전기 거래 현황 등
