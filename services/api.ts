@@ -33,6 +33,28 @@ export interface StationData {
   unAvaliableCount: number
 }
 
+export interface StationOverviewData {
+  stationId: string
+  stationName: string
+  latitude: number
+  longitude: number
+  status: string
+}
+
+export interface Transaction {
+  id: string
+  stationName: string
+  category: string
+  type: string
+  startTime: string
+  endTime: string
+  transactionId: string
+  userId: string
+  vehicleInfo: string
+  amount: string
+  profit: string
+}
+
 export interface ApiResponse<T> {
   data: T
   success: boolean
@@ -131,6 +153,85 @@ const MOCK_DATA = {
       unAvaliableCount: 1,
     },
   ],
+  stationOverview: [
+    {
+      stationId: "station-001",
+      stationName: "세종충전소 1",
+      latitude: 37.5665,
+      longitude: 126.978,
+      status: "INACTIVE",
+    },
+    {
+      stationId: "station-002",
+      stationName: "세종충전소 2",
+      latitude: 37.5645,
+      longitude: 126.976,
+      status: "ACTIVE",
+    },
+    {
+      stationId: "station-003",
+      stationName: "강남충전소",
+      latitude: 37.5015,
+      longitude: 127.0268,
+      status: "ACTIVE",
+    },
+    {
+      stationId: "station-004",
+      stationName: "여의도충전소",
+      latitude: 37.5256,
+      longitude: 126.924,
+      status: "MAINTENANCE",
+    },
+    {
+      stationId: "station-005",
+      stationName: "종로충전소",
+      latitude: 37.572,
+      longitude: 126.9794,
+      status: "INACTIVE",
+    },
+    {
+      stationId: "station-006",
+      stationName: "서초충전소",
+      latitude: 37.4835,
+      longitude: 127.0322,
+      status: "ACTIVE",
+    },
+    {
+      stationId: "station-007",
+      stationName: "송파충전소",
+      latitude: 37.5145,
+      longitude: 127.1058,
+      status: "ACTIVE",
+    },
+  ],
+  transactions: [
+    {
+      id: "tx-001",
+      stationName: "세종충전소",
+      category: "충전 내역",
+      type: "충전",
+      startTime: "2025-01-02 11:25:20",
+      endTime: "2025-01-02 11:55:20",
+      transactionId: "CSG-295710-CH",
+      userId: "USER-1042",
+      vehicleInfo: "Tesla-102",
+      amount: "100,102(KWh)",
+      profit: "12,360.7 (KRW)",
+    },
+    {
+      id: "tx-002",
+      stationName: "세종충전소",
+      category: "충전 내역",
+      type: "충전",
+      startTime: "2025-01-02 12:25:20",
+      endTime: "2025-01-02 12:55:20",
+      transactionId: "CSG-295711-CH",
+      userId: "USER-1042",
+      vehicleInfo: "Ioniq6",
+      amount: "100,102(KWh)",
+      profit: "12,360.7 (KRW)",
+    },
+  ],
 }
 
 // API 요청 함수
@@ -179,6 +280,24 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
         setTimeout(() => {
           console.log("모의 데이터:", MOCK_DATA.stations)
           resolve(MOCK_DATA.stations as unknown as T)
+        }, 800)
+      })
+    }
+
+    if (endpoint === "/overview/stations") {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          console.log("모의 데이터:", MOCK_DATA.stationOverview)
+          resolve(MOCK_DATA.stationOverview as unknown as T)
+        }, 800)
+      })
+    }
+
+    if (endpoint === "/transactions") {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          console.log("모의 데이터:", MOCK_DATA.transactions)
+          resolve(MOCK_DATA.transactions as unknown as T)
         }, 800)
       })
     }
@@ -289,4 +408,34 @@ export async function fetchStations(): Promise<StationData[]> {
   }
 }
 
-// 다른 API 함수들을 여기에 추가할 수 있습니다.
+// 충전소 위치 정보 가져오기
+export async function fetchStationOverview(): Promise<StationOverviewData[]> {
+  try {
+    console.log("충전소 위치 정보 요청 시작")
+    const data = await apiRequest<StationOverviewData[]>("/overview/stations")
+    console.log("충전소 위치 정보 요청 완료:", data)
+    return data
+  } catch (error) {
+    console.error("충전소 위치 정보를 가져오는 중 오류 발생:", error)
+
+    // 오류 발생 시 모의 데이터 반환 (개발 편의를 위해)
+    console.log("오류 발생으로 모의 데이터 반환")
+    return MOCK_DATA.stationOverview
+  }
+}
+
+// 거래 내역 가져오기
+export async function fetchTransactions(): Promise<Transaction[]> {
+  try {
+    console.log("거래 내역 요청 시작")
+    const data = await apiRequest<Transaction[]>("/transactions")
+    console.log("거래 내역 요청 완료:", data)
+    return data
+  } catch (error) {
+    console.error("거래 내역을 가져오는 중 오류 발생:", error)
+
+    // 오류 발생 시 모의 데이터 반환 (개발 편의를 위해)
+    console.log("오류 발생으로 모의 데이터 반환")
+    return MOCK_DATA.transactions
+  }
+}
