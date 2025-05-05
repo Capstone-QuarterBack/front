@@ -2,15 +2,22 @@
 
 import { useEffect, useState } from "react"
 import type { StationOverviewData } from "@/types/station"
+import type { ChargerStatusInfo, AvailableChargerResponse } from "@/types/api"
 import { mockData } from "@/data/mockData"
 import { BatteryStatus } from "./BatteryStatus"
 import { ChargerPanel } from "./ChargerPanel"
+import { fetchChargerStatuses, fetchAvailableChargerInfo } from "@/services/chargerApi"
+import { loadingStyles } from "@/lib/utils/style-utils"
 
 export default function StationDetailPage() {
   const [station, setStation] = useState<StationOverviewData | null>(null)
+  const [chargerStatuses, setChargerStatuses] = useState<ChargerStatusInfo[]>([])
+  const [chargerInfoMap, setChargerInfoMap] = useState<Map<number, AvailableChargerResponse>>(new Map())
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
+  // URL에서 충전소 데이터 가져오기
   useEffect(() => {
-    // URL에서 충전소 데이터 파라미터 가져오기
     const params = new URLSearchParams(window.location.search)
     const stationData = params.get("stationData")
 
@@ -20,14 +27,80 @@ export default function StationDetailPage() {
         setStation(decodedData)
       } catch (error) {
         console.error("충전소 데이터 파싱 오류:", error)
+        setError("충전소 데이터를 불러오는 중 오류가 발생했습니다.")
       }
     }
   }, [])
 
-  if (!station) {
+  // 충전소 정보가 있으면 충전기 상태 정보 가져오기
+  useEffect(() => {
+    if (!station) return
+
+    const loadChargerStatuses = async () => {
+      try {
+        setLoading(true)
+        const statuses = await fetchChargerStatuses(station.stationId)
+        setChargerStatuses(statuses)
+      } catch (error) {
+        console.error("충전기 상태 정보 로드 오류:", error)
+        setError("충전기 상태 정보를 불러오는 중 오류가 발생했습니다.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadChargerStatuses()
+  }, [station])
+
+  // 충전기 상태 정보가 있으면 각 충전기의 상세 정보 가져오기
+  useEffect(() => {
+    if (chargerStatuses.length === 0) return
+
+    const loadChargerDetails = async () => {
+      try {
+        setLoading(true)
+        const infoMap = new Map<number, AvailableChargerResponse>()
+
+        // 각 충전기에 대해 병렬로 API 호출 실행
+        const promises = chargerStatuses.map(async (status) => {
+          if (status.chargerStatus === "AVAILABLE") {
+            console.log(`충전기 ${status.evseId}의 상세 정보 요청 중...`)
+            const info = await fetchAvailableChargerInfo(status.evseId)
+            console.log(`충전기 ${status.evseId}의 상세 정보 수신 완료:`, info)
+            infoMap.set(status.evseId, info)
+          }
+          // 다른 상태에 대한 처리는 필요시 추가
+        })
+
+        // 모든 API 호출이 완료될 때까지 대기
+        await Promise.all(promises)
+        console.log("모든 충전기 상세 정보 로드 완료:", infoMap)
+
+        setChargerInfoMap(infoMap)
+      } catch (error) {
+        console.error("충전기 상세 정보 로드 오류:", error)
+        setError("충전기 상세 정보를 불러오는 중 오류가 발생했습니다.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadChargerDetails()
+  }, [chargerStatuses])
+
+  // 로딩 중이거나 오류 발생 시 표시
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-zinc-900 text-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+        <div className={loadingStyles.spinner}></div>
+      </div>
+    )
+  }
+
+  if (error || !station) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-zinc-900 text-white">
+        <div className="text-red-500">{error || "충전소 정보를 불러올 수 없습니다."}</div>
       </div>
     )
   }
@@ -50,17 +123,27 @@ export default function StationDetailPage() {
           {/* 중앙 및 오른쪽 패널 - 충전기 상태 및 요약 정보 */}
           <div className="lg:col-span-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 충전기 01 - 사용가능 상태이므로 과거 데이터와 월별 사용 내역 포함 */}
-              <ChargerPanel charger={mockData.chargers[0]} data={mockData} showDetails={true} showSummary={true} />
+              {chargerStatuses.map((status) => {
+                // 각 충전기의 ID에 해당하는 API 응답 데이터 가져오기
+                const chargerInfo = chargerInfoMap.get(status.evseId)
+                console.log(`충전기 ${status.evseId} 정보:`, chargerInfo)
 
-              {/* 충전기 02 - 사용중 상태이므로 현재 충전 정보와 과거 사용 내역 표시 */}
-              <ChargerPanel charger={mockData.chargers[1]} data={mockData} showDetails={true} />
-
-              {/* 충전기 03 - 사용중 상태이므로 현재 충전 정보와 과거 사용 내역 표시 */}
-              <ChargerPanel charger={mockData.chargers[2]} data={mockData} showDetails={true} />
-
-              {/* 충전기 04 - 사용중 상태이므로 현재 충전 정보와 과거 사용 내역 표시 */}
-              <ChargerPanel charger={mockData.chargers[3]} data={mockData} showDetails={true} />
+                return (
+                  <ChargerPanel
+                    key={status.evseId}
+                    charger={{
+                      id: status.evseId.toString(),
+                      status: status.chargerStatus,
+                      statusText: status.chargerStatus === "AVAILABLE" ? "사용가능" : "사용중",
+                    }}
+                    data={mockData}
+                    apiData={chargerInfo}
+                    showDetails={true}
+                    // 모든 충전기에 대해 요약 정보 표시 (각각의 데이터로)
+                    showSummary={status.chargerStatus === "AVAILABLE"}
+                  />
+                )
+              })}
             </div>
           </div>
         </div>

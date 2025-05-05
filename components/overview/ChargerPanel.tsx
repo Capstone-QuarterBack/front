@@ -1,4 +1,5 @@
 import type { ChargerData, MockDataType } from "@/types/station"
+import type { AvailableChargerResponse } from "@/types/api"
 import { ChargerStatus } from "./ChargerStatus"
 import { UsageHistory } from "./UsageHistory"
 import { StationSummary } from "./StationSummary"
@@ -6,15 +7,46 @@ import { StationSummary } from "./StationSummary"
 interface ChargerPanelProps {
   charger: ChargerData
   data: MockDataType
+  apiData?: AvailableChargerResponse
   showDetails?: boolean
   showSummary?: boolean
 }
 
-export function ChargerPanel({ charger, data, showDetails = false, showSummary = false }: ChargerPanelProps) {
+export function ChargerPanel({ charger, data, apiData, showDetails = false, showSummary = false }: ChargerPanelProps) {
   // 사용가능 상태인지 확인
-  const isActive = charger.status === "ACTIVE"
+  const isActive = charger.status === "AVAILABLE"
   // 사용중 상태인지 확인
-  const isInUse = charger.status === "INACTIVE"
+  const isInUse = charger.status === "INACTIVE" || charger.status === "IN_USE"
+
+  // ChargerPanel 컴포넌트 수정 - API 데이터 처리 부분
+  // API 데이터가 있으면 사용, 없으면 모의 데이터 사용
+  const usageHistory = apiData?.usages || data.usageHistory
+
+  // API 데이터가 있는 경우 해당 데이터 사용, 없으면 모의 데이터 사용
+  const summaryData = apiData
+    ? {
+        totalUsage: apiData.totalChargedEnergy || 0,
+        totalPower: apiData.totalVehicleCount || 0,
+        totalRevenue: apiData.totalRevenue || 0,
+      }
+    : {
+        totalUsage: data.totalUsage,
+        totalPower: data.totalPower,
+        totalRevenue: data.totalRevenue,
+      }
+
+  // 증감률 데이터 (API에서 제공하는 경우)
+  const diffData = apiData
+    ? {
+        usageDiff: apiData.chargedEnergyDiffPercent || 0,
+        powerDiff: apiData.vehicleCountDiffPercent || 0,
+        revenueDiff: apiData.revenueDiffPercent || 0,
+      }
+    : {
+        usageDiff: 3,
+        powerDiff: 6,
+        revenueDiff: 3,
+      }
 
   return (
     <div className="bg-zinc-800 rounded-lg p-4 h-full">
@@ -73,7 +105,7 @@ export function ChargerPanel({ charger, data, showDetails = false, showSummary =
           {/* 사용중인 충전기에도 과거 사용 내역 표시 */}
           <div className="mt-4">
             <h4 className="text-sm text-zinc-400 mb-2">사용 내역</h4>
-            <UsageHistory data={data.usageHistory} />
+            <UsageHistory data={usageHistory} />
           </div>
         </div>
       )}
@@ -81,13 +113,14 @@ export function ChargerPanel({ charger, data, showDetails = false, showSummary =
       {/* 사용가능 상태일 때는 과거 데이터와 월별 사용 내역 표시 */}
       {isActive && (
         <>
-          {showDetails && <UsageHistory data={data.usageHistory} />}
+          {showDetails && <UsageHistory data={usageHistory} />}
           {showSummary && (
             <StationSummary
-              data={{
-                totalUsage: data.totalUsage,
-                totalPower: data.totalPower,
-                totalRevenue: data.totalRevenue,
+              data={summaryData}
+              diffData={{
+                usageDiff: diffData.usageDiff,
+                powerDiff: diffData.powerDiff,
+                revenueDiff: diffData.revenueDiff,
               }}
             />
           )}
