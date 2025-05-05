@@ -39,7 +39,9 @@ export default function StationDetailPage() {
     const loadChargerStatuses = async () => {
       try {
         setLoading(true)
+        console.log(`충전소 ${station.stationId}의 충전기 상태 정보 요청 시작`)
         const statuses = await fetchChargerStatuses(station.stationId)
+        console.log(`충전소 ${station.stationId}의 충전기 상태 정보 수신 완료:`, statuses)
         setChargerStatuses(statuses)
       } catch (error) {
         console.error("충전기 상태 정보 로드 오류:", error)
@@ -61,21 +63,28 @@ export default function StationDetailPage() {
         setLoading(true)
         const infoMap = new Map<number, ChargerInfoResponse>()
 
+        console.log(`${chargerStatuses.length}개 충전기의 상세 정보 요청 시작`)
+
         // 각 충전기에 대해 병렬로 API 호출 실행
         const promises = chargerStatuses.map(async (status) => {
-          // 충전기 상태에 따라 다른 엔드포인트 호출
-          const statusType = status.chargerStatus === "AVAILABLE" ? "available" : "unavailable"
-          console.log(`충전기 ${status.evseId}의 상세 정보 요청 중... (상태: ${statusType})`)
+          try {
+            // 충전기 상태에 따라 다른 엔드포인트 호출
+            const statusType = status.chargerStatus === "AVAILABLE" ? "available" : "unavailable"
+            console.log(`충전기 ${status.evseId}의 상세 정보 요청 중... (상태: ${statusType})`)
 
-          const info = await fetchChargerInfo(station.stationId, status.evseId, statusType)
-          console.log(`충전기 ${status.evseId}의 상세 정보 수신 완료:`, info)
+            const info = await fetchChargerInfo(station.stationId, status.evseId, statusType)
+            console.log(`충전기 ${status.evseId}의 상세 정보 수신 완료:`, info)
 
-          infoMap.set(status.evseId, info)
+            infoMap.set(status.evseId, info)
+          } catch (error) {
+            console.error(`충전기 ${status.evseId} 정보 요청 실패:`, error)
+            // 개별 충전기 오류는 전체 프로세스를 중단하지 않음
+          }
         })
 
         // 모든 API 호출이 완료될 때까지 대기
         await Promise.all(promises)
-        console.log("모든 충전기 상세 정보 로드 완료:", infoMap)
+        console.log("모든 충전기 상세 정보 로드 완료, 총 충전기 수:", infoMap.size)
 
         setChargerInfoMap(infoMap)
       } catch (error) {
@@ -112,6 +121,7 @@ export default function StationDetailPage() {
         {/* 헤더 */}
         <div className="text-center p-4 border-b border-zinc-700 mb-4">
           <h2 className="text-2xl font-bold">{station.stationName}</h2>
+          <p className="text-sm text-zinc-400">충전소 ID: {station.stationId}</p>
         </div>
 
         {/* 콘텐츠 */}
@@ -127,7 +137,7 @@ export default function StationDetailPage() {
               {chargerStatuses.map((status) => {
                 // 각 충전기의 ID에 해당하는 API 응답 데이터 가져오기
                 const chargerInfo = chargerInfoMap.get(status.evseId)
-                console.log(`충전기 ${status.evseId} 정보:`, chargerInfo)
+                console.log(`충전기 ${status.evseId} 정보 렌더링:`, chargerInfo)
 
                 return (
                   <ChargerPanel
