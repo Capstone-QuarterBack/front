@@ -13,7 +13,7 @@ export default function Dashboard({ refreshInterval = 60000 }: DashboardProps) {
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       {/* 사이드바 */}
-      <Sidebar />
+      <Sidebar activeItem="dashboard" />
 
       {/* 메인 콘텐츠 */}
       <div className="flex-1 overflow-auto">
