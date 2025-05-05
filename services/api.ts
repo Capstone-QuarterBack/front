@@ -204,6 +204,32 @@ const MOCK_DATA = {
       status: "ACTIVE",
     },
   ],
+  congestionData: [
+    { hour: 0, count: 0, isPeak: false },
+    { hour: 1, count: 0, isPeak: false },
+    { hour: 2, count: 0, isPeak: false },
+    { hour: 3, count: 0, isPeak: false },
+    { hour: 4, count: 0, isPeak: false },
+    { hour: 5, count: 2, isPeak: false },
+    { hour: 6, count: 3, isPeak: false },
+    { hour: 7, count: 1, isPeak: true },
+    { hour: 8, count: 0, isPeak: false },
+    { hour: 9, count: 1, isPeak: true },
+    { hour: 10, count: 0, isPeak: false },
+    { hour: 11, count: 0, isPeak: false },
+    { hour: 12, count: 1, isPeak: true },
+    { hour: 13, count: 0, isPeak: false },
+    { hour: 14, count: 1, isPeak: true },
+    { hour: 15, count: 0, isPeak: false },
+    { hour: 16, count: 0, isPeak: false },
+    { hour: 17, count: 0, isPeak: false },
+    { hour: 18, count: 0, isPeak: false },
+    { hour: 19, count: 0, isPeak: false },
+    { hour: 20, count: 0, isPeak: false },
+    { hour: 21, count: 0, isPeak: false },
+    { hour: 22, count: 0, isPeak: false },
+    { hour: 23, count: 0, isPeak: false },
+  ],
   transactions: [
     {
       id: "tx-001",
@@ -289,6 +315,15 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
         setTimeout(() => {
           console.log("모의 데이터:", MOCK_DATA.stationOverview)
           resolve(MOCK_DATA.stationOverview as unknown as T)
+        }, 800)
+      })
+    }
+
+    if (endpoint.startsWith("/monitoring/congestion/")) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          console.log("모의 데이터:", MOCK_DATA.congestionData)
+          resolve(MOCK_DATA.congestionData as unknown as T)
         }, 800)
       })
     }
@@ -437,5 +472,21 @@ export async function fetchTransactions(): Promise<Transaction[]> {
     // 오류 발생 시 모의 데이터 반환 (개발 편의를 위해)
     console.log("오류 발생으로 모의 데이터 반환")
     return MOCK_DATA.transactions
+  }
+}
+
+// 혼잡도 데이터 가져오기
+export async function fetchCongestionData(): Promise<any> {
+  try {
+    console.log("혼잡도 데이터 요청 시작")
+    const data = await apiRequest<any>("/congestion")
+    console.log("혼잡도 데이터 요청 완료:", data)
+    return data
+  } catch (error) {
+    console.error("혼잡도 데이터를 가져오는 중 오류 발생:", error)
+
+    // 오류 발생 시 모의 데이터 반환 (개발 편의를 위해)
+    console.log("오류 발생으로 모의 데이터 반환")
+    return MOCK_DATA.congestionData
   }
 }
