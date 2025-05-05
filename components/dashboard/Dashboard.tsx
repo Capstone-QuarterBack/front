@@ -9,7 +9,7 @@ interface DashboardProps {
   refreshInterval?: number // 데이터 새로고침 간격 (밀리초)
 }
 
-export default function Dashboard({ refreshInterval = 0 }: DashboardProps) {
+export default function Dashboard({ refreshInterval = 60000 }: DashboardProps) {
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       {/* 사이드바 */}
@@ -26,22 +26,22 @@ export default function Dashboard({ refreshInterval = 0 }: DashboardProps) {
 
             {/* 일일 정보 */}
             <div className="col-span-1">
-              <DailyInfo refreshInterval={refreshInterval} />
+              <DailyInfo />
             </div>
 
             {/* 충전기 사용 정보 */}
             <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-2">
-              <ChargerUsage refreshInterval={refreshInterval} />
+              <ChargerUsage />
             </div>
 
             {/* 실시간 전기 거래 현황 */}
             <div className="col-span-1 md:col-span-2 xl:col-span-2">
-              <ElectricityTrading refreshInterval={refreshInterval} />
+              <ElectricityTrading />
             </div>
 
             {/* 등록 충전소 정보 */}
             <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4">
-              <StationInfo refreshInterval={refreshInterval} />
+              <StationInfo />
             </div>
           </div>
         </div>
