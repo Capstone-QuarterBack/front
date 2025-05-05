@@ -15,6 +15,24 @@ export interface ChargerUsageData {
   transactionId: string
 }
 
+export interface DailySummaryData {
+  usage: number
+  profit: number
+  discharge: number
+}
+
+export interface StationData {
+  stationId: string
+  stationName: string
+  address: string
+  stationStatus: string
+  regDate: string
+  totalChargers: number
+  avaliableCount: number
+  occupiedCount: number
+  unAvaliableCount: number
+}
+
 export interface ApiResponse<T> {
   data: T
   success: boolean
@@ -84,6 +102,24 @@ const MOCK_DATA = {
       transactionId: "tx-001",
     },
   ],
+  dailySummary: {
+    usage: 6,
+    profit: 49500,
+    discharge: 184000,
+  },
+  stations: [
+    {
+      stationId: "station-001",
+      stationName: "rxx2",
+      address: "서울특별시 중구 세종대로 110",
+      stationStatus: "INACTIVE",
+      regDate: "2025-04-17T11:20:00",
+      totalChargers: 3,
+      avaliableCount: 3,
+      occupiedCount: 0,
+      unAvaliableCount: 0,
+    },
+  ],
 }
 
 // API 요청 함수
@@ -114,6 +150,24 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
         setTimeout(() => {
           console.log("모의 데이터:", MOCK_DATA.chargerUsage)
           resolve(MOCK_DATA.chargerUsage as unknown as T)
+        }, 800)
+      })
+    }
+
+    if (endpoint === "/dashboard/summary") {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          console.log("모의 데이터:", MOCK_DATA.dailySummary)
+          resolve(MOCK_DATA.dailySummary as unknown as T)
+        }, 800)
+      })
+    }
+
+    if (endpoint === "/dashboard/stations") {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          console.log("모의 데이터:", MOCK_DATA.stations)
+          resolve(MOCK_DATA.stations as unknown as T)
         }, 800)
       })
     }
@@ -192,5 +246,36 @@ export async function fetchChargerUsage(): Promise<ChargerUsageData[]> {
   }
 }
 
+// 일일 요약 정보 가져오기
+export async function fetchDailySummary(): Promise<DailySummaryData> {
+  try {
+    console.log("일일 요약 정보 요청 시작")
+    const data = await apiRequest<DailySummaryData>("/dashboard/summary")
+    console.log("일일 요약 정보 요청 완료:", data)
+    return data
+  } catch (error) {
+    console.error("일일 요약 정보를 가져오는 중 오류 발생:", error)
+
+    // 오류 발생 시 모의 데이터 반환 (개발 편의를 위해)
+    console.log("오류 발생으로 모의 데이터 반환")
+    return MOCK_DATA.dailySummary
+  }
+}
+
+// 충전소 정보 가져오기
+export async function fetchStations(): Promise<StationData[]> {
+  try {
+    console.log("충전소 정보 요청 시작")
+    const data = await apiRequest<StationData[]>("/dashboard/stations")
+    console.log("충전소 정보 요청 완료:", data)
+    return data
+  } catch (error) {
+    console.error("충전소 정보를 가져오는 중 오류 발생:", error)
+
+    // 오류 발생 시 모의 데이터 반환 (개발 편의를 위해)
+    console.log("오류 발생으로 모의 데이터 반환")
+    return MOCK_DATA.stations
+  }
+}
+
 // 다른 API 함수들을 여기에 추가할 수 있습니다.
-// 예: 일일 정보, 전기 거래 현황 등

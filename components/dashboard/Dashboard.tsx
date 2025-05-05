@@ -26,7 +26,7 @@ export default function Dashboard({ refreshInterval = 60000 }: DashboardProps) {
 
             {/* 일일 정보 */}
             <div className="col-span-1">
-              <DailyInfo />
+              <DailyInfo refreshInterval={refreshInterval} />
             </div>
 
             {/* 충전기 사용 정보 */}
@@ -41,7 +41,7 @@ export default function Dashboard({ refreshInterval = 60000 }: DashboardProps) {
 
             {/* 등록 충전소 정보 */}
             <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4">
-              <StationInfo />
+              <StationInfo refreshInterval={refreshInterval} />
             </div>
           </div>
         </div>
