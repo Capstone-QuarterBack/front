@@ -12,6 +12,7 @@ export function UsageHistory({ data }: UsageHistoryProps) {
 
   return (
     <div>
+      <h4 className="text-sm text-zinc-400 mb-2">사용 내역</h4>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>

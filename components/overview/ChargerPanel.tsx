@@ -1,5 +1,5 @@
 import type { ChargerData, MockDataType } from "@/types/station"
-import type { AvailableChargerResponse } from "@/types/api"
+import type { ChargerInfoResponse } from "@/types/api"
 import { ChargerStatus } from "./ChargerStatus"
 import { UsageHistory } from "./UsageHistory"
 import { StationSummary } from "./StationSummary"
@@ -7,7 +7,7 @@ import { StationSummary } from "./StationSummary"
 interface ChargerPanelProps {
   charger: ChargerData
   data: MockDataType
-  apiData?: AvailableChargerResponse
+  apiData?: ChargerInfoResponse
   showDetails?: boolean
   showSummary?: boolean
 }
@@ -15,45 +15,37 @@ interface ChargerPanelProps {
 export function ChargerPanel({ charger, data, apiData, showDetails = false, showSummary = false }: ChargerPanelProps) {
   // 사용가능 상태인지 확인
   const isActive = charger.status === "AVAILABLE"
-  // 사용중 상태인지 확인
-  const isInUse = charger.status === "INACTIVE" || charger.status === "IN_USE"
+  // 사용불가 상태인지 확인
+  const isUnavailable = charger.status === "UNAVAILABLE"
 
-  // ChargerPanel 컴포넌트 수정 - API 데이터 처리 부분
   // API 데이터가 있으면 사용, 없으면 모의 데이터 사용
   const usageHistory = apiData?.usages || data.usageHistory
 
-  // API 데이터가 있는 경우 해당 데이터 사용, 없으면 모의 데이터 사용
-  const summaryData = apiData
-    ? {
-        totalUsage: apiData.totalChargedEnergy || 0,
-        totalPower: apiData.totalVehicleCount || 0,
-        totalRevenue: apiData.totalRevenue || 0,
-      }
-    : {
-        totalUsage: data.totalUsage,
-        totalPower: data.totalPower,
-        totalRevenue: data.totalRevenue,
-      }
+  // 사용 내역 데이터에서 총 충전량, 총 가격 계산
+  const totalChargedEnergy = apiData?.usages.reduce((sum, usage) => sum + usage.chargedEnergy, 0) || 0
+  const totalRevenue = apiData?.usages.reduce((sum, usage) => sum + usage.price, 0) || 0
+  const totalVehicleCount = apiData?.totalElements || 0
 
-  // 증감률 데이터 (API에서 제공하는 경우)
-  const diffData = apiData
-    ? {
-        usageDiff: apiData.chargedEnergyDiffPercent || 0,
-        powerDiff: apiData.vehicleCountDiffPercent || 0,
-        revenueDiff: apiData.revenueDiffPercent || 0,
-      }
-    : {
-        usageDiff: 3,
-        powerDiff: 6,
-        revenueDiff: 3,
-      }
+  // 요약 데이터 생성
+  const summaryData = {
+    totalUsage: totalChargedEnergy,
+    totalPower: totalVehicleCount,
+    totalRevenue: totalRevenue,
+  }
+
+  // 증감률 데이터 (모의 데이터)
+  const diffData = {
+    usageDiff: Math.floor(Math.random() * 20) - 10, // -10 ~ 10 사이의 랜덤 값
+    powerDiff: Math.floor(Math.random() * 20) - 10,
+    revenueDiff: Math.floor(Math.random() * 20) - 10,
+  }
 
   return (
     <div className="bg-zinc-800 rounded-lg p-4 h-full">
       <ChargerStatus id={charger.id} status={charger.status} statusText={charger.statusText} />
 
-      {/* 사용중인 충전기에는 현재 충전 정보 표시 */}
-      {isInUse && (
+      {/* 사용불가 상태인 충전기에는 현재 충전 정보 표시 */}
+      {isUnavailable && (
         <div className="mt-4">
           <div className="bg-zinc-900 rounded-lg p-4">
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -102,7 +94,7 @@ export function ChargerPanel({ charger, data, apiData, showDetails = false, show
             </div>
           </div>
 
-          {/* 사용중인 충전기에도 과거 사용 내역 표시 */}
+          {/* 사용불가 충전기에도 과거 사용 내역 표시 */}
           <div className="mt-4">
             <h4 className="text-sm text-zinc-400 mb-2">사용 내역</h4>
             <UsageHistory data={usageHistory} />

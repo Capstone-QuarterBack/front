@@ -4,14 +4,8 @@ export interface ChargerStatusInfo {
   chargerStatus: string
 }
 
-// 사용 가능한 충전기 정보 응답 타입
-export interface AvailableChargerResponse {
-  totalChargedEnergy: number
-  totalVehicleCount: number
-  totalRevenue: number
-  chargedEnergyDiffPercent: number
-  vehicleCountDiffPercent: number
-  revenueDiffPercent: number
+// 충전기 정보 응답 타입 (available/unavailable 공통)
+export interface ChargerInfoResponse {
   usages: ChargerUsage[]
   currentPage: number
   totalPages: number
