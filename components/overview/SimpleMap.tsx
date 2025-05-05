@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import type { StationOverviewData } from "@/services/api"
+import { StationDetailModal } from "./StationDetailModal"
 
 interface SimpleMapProps {
   stations: StationOverviewData[]
@@ -19,6 +20,7 @@ export function SimpleMap({ stations, onSelectStation, selectedStation }: Simple
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [infoWindow, setInfoWindow] = useState<{ x: number; y: number; station: StationOverviewData } | null>(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
 
   // 지도 크기 설정
   useEffect(() => {
@@ -76,6 +78,41 @@ export function SimpleMap({ stations, onSelectStation, selectedStation }: Simple
     })
   }, [stations, mapSize])
 
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+
+      const rect = mapRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      const mouseX = e.clientX - rect.left
+      const mouseY = e.clientY - rect.top
+
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
+
+      setScale((prevScale) => {
+        const newScale = prevScale * zoomFactor
+
+        // 마우스 위치를 기준으로 오프셋 조정
+        const newOffsetX = mouseX - (mouseX - offset.x) * zoomFactor
+        const newOffsetY = mouseY - (mouseY - offset.y) * zoomFactor
+
+        setOffset({ x: newOffsetX, y: newOffsetY })
+
+        return newScale
+      })
+    }
+
+    const mapElement = mapRef.current
+    mapElement.addEventListener("wheel", handleWheel, { passive: false })
+
+    return () => {
+      mapElement.removeEventListener("wheel", handleWheel)
+    }
+  }, [offset])
+
   // 마우스 이벤트 핸들러
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
@@ -104,31 +141,30 @@ export function SimpleMap({ stations, onSelectStation, selectedStation }: Simple
     setIsDragging(false)
   }
 
-  // 줌 이벤트 핸들러
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault()
-
-    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
-    const mouseX = e.nativeEvent.offsetX
-    const mouseY = e.nativeEvent.offsetY
-
-    setScale((prevScale) => {
-      const newScale = prevScale * zoomFactor
-
-      // 마우스 위치를 기준으로 오프셋 조정
-      const newOffsetX = mouseX - (mouseX - offset.x) * zoomFactor
-      const newOffsetY = mouseY - (mouseY - offset.y) * zoomFactor
-
-      setOffset({ x: newOffsetX, y: newOffsetY })
-
-      return newScale
-    })
-  }
-
   // 충전소 마커 클릭 핸들러
   const handleMarkerClick = (station: StationOverviewData, x: number, y: number) => {
     onSelectStation(station)
     setInfoWindow({ x, y, station })
+  }
+
+  // 정보 창에서 상세 보기 클릭 핸들러
+  const handleViewDetails = () => {
+    if (!selectedStation) return
+
+    // 충전소 데이터를 URL 파라미터로 전달
+    const stationData = encodeURIComponent(JSON.stringify(selectedStation))
+
+    // 새 창 열기 - 전체 화면에 가깝게 설정
+    const width = Math.min(1400, window.screen.width * 0.9)
+    const height = Math.min(900, window.screen.height * 0.9)
+    const left = (window.screen.width - width) / 2
+    const top = (window.screen.height - height) / 2
+
+    window.open(
+      `/station-detail?stationData=${stationData}`,
+      "stationDetail",
+      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`,
+    )
   }
 
   // 충전소 상태에 따른 색상 반환
@@ -173,7 +209,6 @@ export function SimpleMap({ stations, onSelectStation, selectedStation }: Simple
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
-      onWheel={handleWheel}
       style={{ cursor: isDragging ? "grabbing" : "grab" }}
     >
       {/* 격자 배경 */}
@@ -228,6 +263,12 @@ export function SimpleMap({ stations, onSelectStation, selectedStation }: Simple
             <br />
             경도: {infoWindow.station.longitude.toFixed(4)}
           </div>
+          <button
+            className="mt-2 w-full bg-zinc-700 hover:bg-zinc-600 text-xs py-1 rounded"
+            onClick={handleViewDetails}
+          >
+            상세 정보 보기
+          </button>
         </div>
       )}
 
@@ -241,6 +282,15 @@ export function SimpleMap({ stations, onSelectStation, selectedStation }: Simple
           -
         </button>
       </div>
+
+      {/* 상세 정보 모달 */}
+      {selectedStation && (
+        <StationDetailModal
+          station={selectedStation}
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+        />
+      )}
     </div>
   )
 }
