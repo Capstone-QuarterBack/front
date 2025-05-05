@@ -3,7 +3,7 @@ import { componentStyles } from "@/lib/utils/style-utils"
 import { cn } from "@/lib/utils"
 
 interface CardProps {
-  title?: string // title을 선택적으로 변경
+  title?: string
   children: React.ReactNode
   className?: string
   headerClassName?: string
