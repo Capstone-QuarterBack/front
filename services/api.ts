@@ -119,6 +119,17 @@ const MOCK_DATA = {
       occupiedCount: 0,
       unAvaliableCount: 0,
     },
+    {
+      stationId: "station-002",
+      stationName: "R1",
+      address: "서울특별시 중구 세종대로 110",
+      stationStatus: "ACTIVE",
+      regDate: "2025-05-05T10:30:00",
+      totalChargers: 3,
+      avaliableCount: 1,
+      occupiedCount: 1,
+      unAvaliableCount: 1,
+    },
   ],
 }
 

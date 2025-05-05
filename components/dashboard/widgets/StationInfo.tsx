@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { fetchStations, type StationData } from "@/services/api"
 import { loadingStyles, errorStyles } from "@/lib/utils/style-utils"
 import { formatDate } from "@/lib/utils/date-utils"
+import { StationStatusIndicator } from "@/components/dashboard/StationStatusIndicator"
 
 export function StationInfo({ className = "", refreshInterval = 0 }) {
   const [stations, setStations] = useState<StationData[]>([])
@@ -75,27 +76,18 @@ export function StationInfo({ className = "", refreshInterval = 0 }) {
     }
   }, [searchTerm, stations])
 
-  // 충전소 상태에 따른 색상 반환
-  const getStatusColor = (status: string) => {
+  // 충전소 상태에 따른 스타일 반환
+  const getStatusStyle = (status: string) => {
     switch (status.toUpperCase()) {
       case "ACTIVE":
-        return "text-green-500"
+        return "bg-zinc-800 text-green-500"
       case "INACTIVE":
-        return "text-red-500"
+        return "bg-zinc-900 text-red-500"
       case "MAINTENANCE":
-        return "text-amber-500"
+        return "bg-zinc-800 text-amber-500"
       default:
-        return "text-zinc-400"
+        return "bg-zinc-800 text-zinc-400"
     }
-  }
-
-  // 충전기 상태 카운트 배열 생성
-  const getStatusCounts = (station: StationData) => {
-    return [
-      { count: station.avaliableCount, color: "bg-green-500" },
-      { count: station.occupiedCount, color: "bg-amber-500" },
-      { count: station.unAvaliableCount, color: "bg-red-500" },
-    ].filter((stat) => stat.count > 0) // 0인 항목은 제외
   }
 
   return (
@@ -140,8 +132,10 @@ export function StationInfo({ className = "", refreshInterval = 0 }) {
             <table className="w-full text-sm">
               <tbody>
                 {filteredStations.map((station) => (
-                  <tr key={station.stationId} className="border-b border-zinc-700">
-                    <td className={`py-3 ${getStatusColor(station.stationStatus)}`}>{station.stationStatus}</td>
+                  <tr key={station.stationId} className={`${getStatusStyle(station.stationStatus)}`}>
+                    <td className="py-3 pl-3">
+                      <div>{station.stationStatus}</div>
+                    </td>
                     <td className="py-3">
                       <div>{station.stationName}</div>
                       <div className="text-xs text-zinc-400">ID: {station.stationId}</div>
@@ -150,18 +144,12 @@ export function StationInfo({ className = "", refreshInterval = 0 }) {
                       <div>{station.address}</div>
                     </td>
                     <td className="py-3">Regist Date {formatDate(station.regDate)}</td>
-                    <td className="py-3">
-                      <div className="flex items-center space-x-2">
-                        {getStatusCounts(station).map((stat, i) => (
-                          <div key={i} className="flex items-center">
-                            <div
-                              className={`${stat.color} text-white w-5 h-5 rounded-full flex items-center justify-center text-xs`}
-                            >
-                              {stat.count}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                    <td className="py-3 pr-3">
+                      <StationStatusIndicator
+                        available={station.avaliableCount}
+                        occupied={station.occupiedCount}
+                        unavailable={station.unAvaliableCount}
+                      />
                     </td>
                   </tr>
                 ))}
