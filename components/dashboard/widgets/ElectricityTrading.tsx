@@ -31,14 +31,13 @@ export function ElectricityTrading() {
   return (
     <Card
       title="실시간 전기 거래 현황"
-      className="lg:col-span-2"
       headerRight={
         <div className="text-xs">
           <span>Table</span> | <span className="text-zinc-400">Graph</span>
         </div>
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
         <TradingPanel data={buyData} />
         <TradingPanel data={sellData} />
       </div>
