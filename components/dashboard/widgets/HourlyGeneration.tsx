@@ -5,48 +5,67 @@ import { Card } from "@/components/ui/Card"
 import { LineChart } from "@/components/charts/LineChart"
 import { fetchDischargeByHour, type DischargeByHourData } from "@/services/api"
 import type { ChartData } from "@/types/chart"
+import { componentStyles, loadingStyles, errorStyles } from "@/lib/utils/style-utils"
+import { COLORS } from "@/lib/constants/theme"
 
-export function HourlyGeneration() {
+interface HourlyGenerationProps {
+  className?: string
+  refreshInterval?: number // 자동 새로고침 간격 (밀리초)
+}
+
+export function HourlyGeneration({ className = "", refreshInterval = 0 }: HourlyGenerationProps) {
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
+  // 데이터 로드 함수
+  const loadData = async () => {
+    try {
+      setIsLoading(true)
+      const data = await fetchDischargeByHour()
+
+      // API 응답 데이터를 차트 데이터 형식으로 변환
+      const formattedData: ChartData[] = data.map((item: DischargeByHourData) => ({
+        x: item.hour,
+        y: item.dischargeKwh / 1000, // kWh 단위로 변환 (값이 너무 크면 스케일 조정)
+      }))
+
+      setChartData(formattedData)
+      setError(null)
+    } catch (err) {
+      setError("데이터를 불러오는 중 오류가 발생했습니다.")
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 초기 데이터 로드 및 자동 새로고침 설정
   useEffect(() => {
-    async function loadDischargeData() {
-      try {
-        setIsLoading(true)
-        const data = await fetchDischargeByHour()
+    loadData()
 
-        // API 응답 데이터를 차트 데이터 형식으로 변환
-        const formattedData: ChartData[] = data.map((item: DischargeByHourData) => ({
-          x: item.hour,
-          y: item.dischargeKwh / 1000, // kWh 단위로 변환 (값이 너무 크면 스케일 조정)
-        }))
-
-        setChartData(formattedData)
-        setError(null)
-      } catch (err) {
-        setError("데이터를 불러오는 중 오류가 발생했습니다.")
-        console.error(err)
-      } finally {
-        setIsLoading(false)
-      }
+    // 자동 새로고침 설정 (refreshInterval이 0보다 큰 경우에만)
+    let intervalId: NodeJS.Timeout | null = null
+    if (refreshInterval > 0) {
+      intervalId = setInterval(loadData, refreshInterval)
     }
 
-    loadDischargeData()
-  }, [])
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [refreshInterval])
 
   return (
-    <Card title="시간대별 발전량" className="lg:col-span-2">
-      <div className="h-[200px] relative">
+    <Card title="시간대별 발전량" className={className}>
+      <div className={componentStyles.chartContainer}>
         {isLoading ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+          <div className={loadingStyles.container}>
+            <div className={loadingStyles.spinner}></div>
           </div>
         ) : error ? (
-          <div className="absolute inset-0 flex items-center justify-center text-red-500">{error}</div>
+          <div className={errorStyles.container}>{error}</div>
         ) : (
-          <LineChart data={chartData} color="#F59E0B" />
+          <LineChart data={chartData} color={COLORS.primary} showPoints={true} showLabels={true} />
         )}
       </div>
     </Card>

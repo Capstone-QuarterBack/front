@@ -26,23 +26,29 @@ export function StationInfo() {
   return (
     <Card
       title="등록 충전소 정보"
-      className="lg:col-span-3"
       headerRight={
-        <div className="flex items-center space-x-2">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+          <div className="relative w-full sm:w-auto">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-400" />
-            <Input className="pl-8 h-8 bg-zinc-700 border-zinc-600 text-sm" placeholder="충전소를 입력해주세요" />
+            <Input
+              className="pl-8 h-8 bg-zinc-700 border-zinc-600 text-sm w-full sm:w-[200px] md:w-[250px]"
+              placeholder="충전소를 입력해주세요"
+            />
           </div>
-          <Button size="sm" variant="outline" className="h-8 text-xs">
-            Add Station
-          </Button>
-          <Button size="sm" variant="outline" className="h-8 text-xs">
-            Delete Station
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="h-8 text-xs">
+              Add Station
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs">
+              Delete Station
+            </Button>
+          </div>
         </div>
       }
     >
-      <StationList stations={stations} />
+      <div className="h-[180px] sm:h-[200px] md:h-[220px] lg:h-[250px] overflow-auto">
+        <StationList stations={stations} />
+      </div>
     </Card>
   )
 }

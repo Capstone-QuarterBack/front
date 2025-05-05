@@ -1,18 +1,29 @@
 import type React from "react"
+import { componentStyles } from "@/lib/utils/style-utils"
+import { cn } from "@/lib/utils"
 
 interface CardProps {
   title: string
   children: React.ReactNode
   className?: string
+  headerClassName?: string
+  titleClassName?: string
   headerRight?: React.ReactNode
 }
 
-export function Card({ title, children, className = "", headerRight }: CardProps) {
+export function Card({
+  title,
+  children,
+  className = "",
+  headerClassName = "",
+  titleClassName = "",
+  headerRight,
+}: CardProps) {
   return (
-    <div className={`bg-zinc-800 rounded-lg p-4 ${className}`}>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-sm font-medium">{title}</h2>
-        {headerRight && headerRight}
+    <div className={cn(componentStyles.card, className)}>
+      <div className={cn(componentStyles.cardHeader, headerClassName)}>
+        <h2 className={cn(componentStyles.cardTitle, titleClassName)}>{title}</h2>
+        {headerRight && <div className="ml-auto">{headerRight}</div>}
       </div>
       {children}
     </div>

@@ -4,13 +4,14 @@ interface NavItemProps {
   icon: React.ReactNode
   label: string
   active?: boolean
+  collapsed?: boolean
 }
 
-export function NavItem({ icon, label, active = false }: NavItemProps) {
+export function NavItem({ icon, label, active = false, collapsed = false }: NavItemProps) {
   return (
     <div className={`flex items-center px-3 py-2 text-sm ${active ? "bg-zinc-800" : "hover:bg-zinc-800"}`}>
       <div className="mr-3">{icon}</div>
-      <span>{label}</span>
+      {!collapsed && <span>{label}</span>}
     </div>
   )
 }
