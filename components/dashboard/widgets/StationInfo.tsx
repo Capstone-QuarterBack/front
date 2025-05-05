@@ -46,8 +46,10 @@ export function StationInfo() {
         </div>
       }
     >
-      <div className="h-[180px] sm:h-[200px] md:h-[220px] lg:h-[250px] overflow-auto">
-        <StationList stations={stations} />
+      <div className="relative w-full" style={{ paddingBottom: "30%" }}>
+        <div className="absolute inset-0 overflow-auto">
+          <StationList stations={stations} />
+        </div>
       </div>
     </Card>
   )

@@ -24,9 +24,7 @@ export function ChargerUsage() {
 
   return (
     <Card title="충전기 사용 정보">
-      <div className="h-[180px] sm:h-[200px] md:h-[220px] lg:h-[250px] overflow-auto">
-        <DataTable columns={columns} data={data} />
-      </div>
+      <DataTable columns={columns} data={data} aspectRatio="2.5/1" />
     </Card>
   )
 }

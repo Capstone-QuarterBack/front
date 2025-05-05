@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card"
 import { LineChart } from "@/components/charts/LineChart"
 import { fetchDischargeByHour, type DischargeByHourData } from "@/services/api"
 import type { ChartData } from "@/types/chart"
-import { componentStyles, loadingStyles, errorStyles } from "@/lib/utils/style-utils"
+import { loadingStyles, errorStyles } from "@/lib/utils/style-utils"
 import { COLORS } from "@/lib/constants/theme"
 
 interface HourlyGenerationProps {
@@ -57,7 +57,7 @@ export function HourlyGeneration({ className = "", refreshInterval = 0 }: Hourly
 
   return (
     <Card title="시간대별 발전량" className={className}>
-      <div className={componentStyles.chartContainer}>
+      <div className="relative">
         {isLoading ? (
           <div className={loadingStyles.container}>
             <div className={loadingStyles.spinner}></div>
@@ -65,7 +65,13 @@ export function HourlyGeneration({ className = "", refreshInterval = 0 }: Hourly
         ) : error ? (
           <div className={errorStyles.container}>{error}</div>
         ) : (
-          <LineChart data={chartData} color={COLORS.primary} showPoints={true} showLabels={true} />
+          <LineChart
+            data={chartData}
+            color={COLORS.primary}
+            showPoints={true}
+            showLabels={true}
+            aspectRatio="2.5/1" // 가로:세로 비율 설정
+          />
         )}
       </div>
     </Card>

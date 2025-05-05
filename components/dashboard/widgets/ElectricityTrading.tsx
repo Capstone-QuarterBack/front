@@ -38,8 +38,8 @@ export function ElectricityTrading() {
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-        <TradingPanel data={buyData} />
-        <TradingPanel data={sellData} />
+        <TradingPanel data={buyData} aspectRatio="1.5/1" />
+        <TradingPanel data={sellData} aspectRatio="1.5/1" />
       </div>
     </Card>
   )

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import type { ChartData } from "@/types/chart"
 import { COLORS } from "@/lib/constants/theme"
+import { aspectRatioContentClass } from "@/lib/utils/layout-utils"
 
 interface ChartConfig {
   padding: number
@@ -18,6 +19,7 @@ interface LineChartProps {
   showPoints?: boolean
   showLabels?: boolean
   className?: string
+  aspectRatio?: string
 }
 
 export function LineChart({
@@ -26,8 +28,10 @@ export function LineChart({
   showPoints = true,
   showLabels = true,
   className = "",
+  aspectRatio = "2/1", // 기본 비율 설정
 }: LineChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
   // 화면 크기에 따른 차트 설정 계산
@@ -51,18 +55,34 @@ export function LineChart({
     }
   }
 
-  // 창 크기 변경 감지
+  // 창 크기 변경 감지 및 캔버스 크기 조정
   useEffect(() => {
     function handleResize() {
-      if (canvasRef.current) {
-        const { width, height } = canvasRef.current.getBoundingClientRect()
+      if (containerRef.current && canvasRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect()
         setDimensions({ width, height })
+
+        // 캔버스 크기 설정
+        canvasRef.current.style.width = "100%"
+        canvasRef.current.style.height = "100%"
       }
     }
 
     handleResize()
+
+    // ResizeObserver를 사용하여 컨테이너 크기 변화 감지
+    const resizeObserver = new ResizeObserver(handleResize)
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+
+    // 윈도우 리사이즈 이벤트도 함께 처리
     window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener("resize", handleResize)
+    }
   }, [])
 
   // 차트 그리기
@@ -73,10 +93,7 @@ export function LineChart({
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // 차트 설정 가져오기
-    const config = getChartConfig(dimensions.width)
-
-    // Set canvas dimensions
+    // Set canvas dimensions with device pixel ratio for sharp rendering
     const dpr = window.devicePixelRatio || 1
     canvas.width = dimensions.width * dpr
     canvas.height = dimensions.height * dpr
@@ -86,6 +103,7 @@ export function LineChart({
     ctx.clearRect(0, 0, dimensions.width, dimensions.height)
 
     // Draw chart
+    const config = getChartConfig(dimensions.width)
     const { padding, fontSize, pointRadius, xLabelStep, yLabelCount } = config
     const chartWidth = dimensions.width - padding * 2
     const chartHeight = dimensions.height - padding * 2
@@ -155,5 +173,11 @@ export function LineChart({
     }
   }, [data, color, dimensions, showPoints, showLabels])
 
-  return <canvas ref={canvasRef} className={`w-full h-full ${className}`} />
+  return (
+    <div ref={containerRef} className={`relative w-full pb-[calc(100%/(${aspectRatio}))] ${className}`}>
+      <div className={aspectRatioContentClass}>
+        <canvas ref={canvasRef} className="w-full h-full" />
+      </div>
+    </div>
+  )
 }
