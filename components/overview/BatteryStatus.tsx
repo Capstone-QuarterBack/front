@@ -35,6 +35,7 @@ export function BatteryStatus({ data, stationId }: BatteryStatusProps) {
           fetchChargingHistory(stationId),
         ])
 
+        console.log("혼잡도 데이터:", congestionResult)
         setCongestionData(congestionResult)
         setChargingHistory(chargingHistoryResult)
       } catch (err) {
@@ -102,54 +103,50 @@ export function BatteryStatus({ data, stationId }: BatteryStatusProps) {
           </div>
         ))}
 
-      <h3 className="text-md font-bold mt-4 mb-2 border-b border-zinc-700 pb-2">충전 시간대 정보</h3>
-      <div className="h-32 bg-zinc-800 rounded-lg p-2 relative">
+      <h3 className="text-md font-bold mt-4 mb-2 border-b border-zinc-700 pb-2">혼잡 시간대 정보</h3>
+      <div className="h-40 bg-zinc-900 rounded-lg p-2 relative">
         {/* 그래프 제목 */}
-        <div className="absolute top-2 left-2 flex items-center justify-between w-full pr-4">
-          <span className="text-xs font-medium">혼잡 시간대 정보</span>
-          <div className="flex items-center">
-            <div className="w-2 h-2 rounded-full bg-pink-500 mr-1"></div>
-            <span className="text-xs text-pink-500">피크 혼잡 시간</span>
-          </div>
+        <div className="absolute top-2 right-2 flex items-center">
+          <span className="text-xs text-pink-500 flex items-center">
+            <span className="inline-block w-2 h-2 rounded-full bg-pink-500 mr-1"></span>
+            피크 혼잡 시간
+          </span>
         </div>
 
         {/* 그래프 배경 - 점선 그리드 */}
         <div className="absolute inset-0 top-8 flex flex-col justify-between px-2">
-          <div className="border-b border-dashed border-zinc-600 h-0"></div>
-          <div className="border-b border-dashed border-zinc-600 h-0"></div>
-          <div className="border-b border-dashed border-zinc-600 h-0"></div>
-          <div className="border-b border-zinc-600 h-0"></div>
+          <div className="border-b border-dashed border-zinc-700 h-0"></div>
+          <div className="border-b border-dashed border-zinc-700 h-0"></div>
+          <div className="border-b border-dashed border-zinc-700 h-0"></div>
+          <div className="border-b border-zinc-700 h-0"></div>
         </div>
 
         {/* X축 레이블 */}
         <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[8px] text-zinc-400 px-2">
-          <span>01</span>
-          <span>03</span>
-          <span>05</span>
-          <span>07</span>
-          <span>09</span>
-          <span>11</span>
-          <span>13</span>
-          <span>15</span>
-          <span>17</span>
-          <span>19</span>
-          <span>21</span>
-          <span>23</span>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span key={i}>{String(i * 2).padStart(2, "0")}</span>
+          ))}
         </div>
 
         {/* 그래프 바 */}
         <div className="absolute inset-0 pt-8 pb-4 flex items-end px-2">
           <div className="w-full flex items-end justify-between">
-            {congestionData.map((hourData) => (
-              <div
-                key={hourData.hour}
-                className={`w-[6px] mx-[1px] ${hourData.isPeak ? "bg-pink-500" : "bg-gray-400"} rounded-t-sm`}
-                style={{
-                  height: hourData.count > 0 ? `${Math.min(hourData.count * 20, 80)}%` : "2px",
-                }}
-                title={`${hourData.hour}시: ${hourData.count}건 ${hourData.isPeak ? "(피크)" : ""}`}
-              />
-            ))}
+            {congestionData && congestionData.length > 0 ? (
+              congestionData.map((hourData) => (
+                <div
+                  key={hourData.hour}
+                  className={`w-[7px] mx-[1px] ${hourData.isPeak ? "bg-pink-500" : "bg-blue-500"} rounded-t-sm`}
+                  style={{
+                    height: hourData.count > 0 ? `${Math.min(hourData.count * 30, 80)}%` : "2px",
+                  }}
+                  title={`${hourData.hour}시: ${hourData.count}건 ${hourData.isPeak ? "(피크)" : ""}`}
+                />
+              ))
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-zinc-500 text-xs">
+                데이터가 없습니다
+              </div>
+            )}
           </div>
         </div>
       </div>
