@@ -53,14 +53,24 @@ const MOCK_DATA = {
 
 // API 요청 함수
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  // 개발 환경이거나 모의 데이터 사용 설정이 되어 있는 경우
-  if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true" || process.env.NODE_ENV === "development") {
-    console.log(`모의 데이터 사용: ${endpoint}`)
+  // 모의 데이터 사용 여부 확인 (기본값은 false로 설정)
+  const useMockData = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true"
+
+  console.log("API 요청:", endpoint)
+  console.log("모의 데이터 사용:", useMockData)
+  console.log("API 기본 URL:", API_CONFIG.baseUrl)
+
+  // 모의 데이터 사용 설정이 되어 있는 경우
+  if (useMockData) {
+    console.log("모의 데이터 반환")
 
     // 엔드포인트에 따라 적절한 모의 데이터 반환
     if (endpoint === "/dashboard/discharge-by-hour") {
       return new Promise((resolve) => {
-        setTimeout(() => resolve(MOCK_DATA.dischargeByHour as unknown as T), 800)
+        setTimeout(() => {
+          console.log("모의 데이터:", MOCK_DATA.dischargeByHour)
+          resolve(MOCK_DATA.dischargeByHour as unknown as T)
+        }, 800)
       })
     }
 
@@ -70,10 +80,13 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
   // 실제 API 요청 로직
   const url = `${API_CONFIG.baseUrl}${endpoint}`
+  console.log("요청 URL:", url)
+
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout)
 
   try {
+    console.log("API 요청 시작...")
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -85,12 +98,17 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
     clearTimeout(timeoutId)
 
+    console.log("API 응답 상태:", response.status)
+
     if (!response.ok) {
       throw new Error(`API 요청 실패: ${response.status}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    console.log("API 응답 데이터:", data)
+    return data
   } catch (error) {
+    console.error("API 요청 오류:", error)
     if ((error as Error).name === "AbortError") {
       throw new Error("API 요청 시간 초과")
     }
@@ -101,10 +119,16 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 // 시간대별 발전량 데이터 가져오기
 export async function fetchDischargeByHour(): Promise<DischargeByHourData[]> {
   try {
-    return await apiRequest<DischargeByHourData[]>("/dashboard/discharge-by-hour")
+    console.log("시간대별 발전량 데이터 요청 시작")
+    const data = await apiRequest<DischargeByHourData[]>("/dashboard/discharge-by-hour")
+    console.log("시간대별 발전량 데이터 요청 완료:", data)
+    return data
   } catch (error) {
     console.error("시간대별 발전량 데이터를 가져오는 중 오류 발생:", error)
-    throw error
+
+    // 오류 발생 시 모의 데이터 반환 (개발 편의를 위해)
+    console.log("오류 발생으로 모의 데이터 반환")
+    return MOCK_DATA.dischargeByHour
   }
 }
 

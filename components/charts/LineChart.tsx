@@ -13,11 +13,28 @@ export function LineChart({ data, color, className = "" }: LineChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
+    console.log("LineChart: 차트 렌더링 시작", data)
     const canvas = canvasRef.current
-    if (!canvas || !data || data.length === 0) return
+    if (!canvas) {
+      console.warn("LineChart: 캔버스 요소를 찾을 수 없습니다.")
+      return
+    }
 
     const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    if (!ctx) {
+      console.warn("LineChart: 캔버스 컨텍스트를 가져올 수 없습니다.")
+      return
+    }
+
+    if (!data || data.length === 0) {
+      console.warn("LineChart: 데이터가 비어 있습니다.")
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = "#666"
+      ctx.font = "14px sans-serif"
+      ctx.textAlign = "center"
+      ctx.fillText("데이터가 없습니다.", canvas.width / 2, canvas.height / 2)
+      return
+    }
 
     // Set canvas dimensions
     const dpr = window.devicePixelRatio || 1
@@ -37,6 +54,8 @@ export function LineChart({ data, color, className = "" }: LineChartProps) {
     // Find min and max values
     const maxY = Math.max(...data.map((d) => d.y)) * 1.1 || 10 // 기본값 설정
     const minY = 0
+
+    console.log("LineChart: 차트 범위 - 최소:", minY, "최대:", maxY)
 
     // Draw x and y axis
     ctx.strokeStyle = "#333"
@@ -67,7 +86,7 @@ export function LineChart({ data, color, className = "" }: LineChartProps) {
 
     data.forEach((point, i) => {
       const x = padding + (point.x / 23) * chartWidth
-      const y = rect.height - padding - ((point.y - minY) / (maxY - minY)) * chartHeight
+      const y = rect.height - padding - ((point.y - minY) / (maxY - minY || 1)) * chartHeight
 
       if (i === 0) {
         ctx.moveTo(x, y)
@@ -81,7 +100,7 @@ export function LineChart({ data, color, className = "" }: LineChartProps) {
     // Draw points
     data.forEach((point) => {
       const x = padding + (point.x / 23) * chartWidth
-      const y = rect.height - padding - ((point.y - minY) / (maxY - minY)) * chartHeight
+      const y = rect.height - padding - ((point.y - minY) / (maxY - minY || 1)) * chartHeight
 
       if (point.y > 0) {
         ctx.beginPath()
@@ -93,6 +112,8 @@ export function LineChart({ data, color, className = "" }: LineChartProps) {
         ctx.stroke()
       }
     })
+
+    console.log("LineChart: 차트 렌더링 완료")
   }, [data, color])
 
   return <canvas ref={canvasRef} className={`w-full h-full ${className}`} />
