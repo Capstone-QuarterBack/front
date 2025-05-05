@@ -47,7 +47,7 @@ export function LineChart({ data, color, className = "" }: LineChartProps) {
     ctx.font = "10px sans-serif"
     ctx.textAlign = "center"
 
-    for (let i = 0; i < 24; i += 2) {
+    for (let i = 0; i < 24; i += 3) {
       const x = padding + (i / 23) * chartWidth
       ctx.fillText(i.toString(), x, rect.height - 5)
     }
@@ -83,13 +83,15 @@ export function LineChart({ data, color, className = "" }: LineChartProps) {
       const x = padding + (point.x / 23) * chartWidth
       const y = rect.height - padding - ((point.y - minY) / (maxY - minY)) * chartHeight
 
-      ctx.beginPath()
-      ctx.arc(x, y, 4, 0, Math.PI * 2)
-      ctx.fillStyle = color
-      ctx.fill()
-      ctx.strokeStyle = "#fff"
-      ctx.lineWidth = 1
-      ctx.stroke()
+      if (point.y > 0) {
+        ctx.beginPath()
+        ctx.arc(x, y, 4, 0, Math.PI * 2)
+        ctx.fillStyle = color
+        ctx.fill()
+        ctx.strokeStyle = "#fff"
+        ctx.lineWidth = 1
+        ctx.stroke()
+      }
     })
   }, [data, color])
 

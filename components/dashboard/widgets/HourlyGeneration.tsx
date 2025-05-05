@@ -6,6 +6,7 @@ import { LineChart } from "@/components/charts/LineChart"
 import { fetchDischargeByHour, type DischargeByHourData } from "@/services/api"
 import type { ChartData } from "@/types/chart"
 import { COLORS } from "@/lib/constants/theme"
+import { loadingStyles, errorStyles } from "@/lib/utils/style-utils"
 
 interface HourlyGenerationProps {
   className?: string
@@ -59,11 +60,11 @@ export function HourlyGeneration({ className = "", refreshInterval = 0 }: Hourly
     <Card title="시간대별 발전량" className={className}>
       <div className="relative h-[180px] md:h-[200px] lg:h-[220px]">
         {isLoading ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
+          <div className={loadingStyles.container}>
+            <div className={loadingStyles.spinner}></div>
           </div>
         ) : error ? (
-          <div className="absolute inset-0 flex items-center justify-center text-red-500">{error}</div>
+          <div className={errorStyles.container}>{error}</div>
         ) : (
           <LineChart data={chartData} color={COLORS.primary} />
         )}
