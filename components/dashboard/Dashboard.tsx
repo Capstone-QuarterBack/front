@@ -31,7 +31,7 @@ export default function Dashboard({ refreshInterval = 60000 }: DashboardProps) {
 
             {/* 충전기 사용 정보 */}
             <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-2">
-              <ChargerUsage />
+              <ChargerUsage refreshInterval={refreshInterval} />
             </div>
 
             {/* 실시간 전기 거래 현황 */}
