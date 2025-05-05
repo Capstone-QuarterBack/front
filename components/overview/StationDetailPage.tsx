@@ -2,17 +2,17 @@
 
 import { useEffect, useState } from "react"
 import type { StationOverviewData } from "@/types/station"
-import type { ChargerStatusInfo, AvailableChargerResponse } from "@/types/api"
+import type { ChargerStatusInfo, ChargerInfoResponse } from "@/types/api"
 import { mockData } from "@/data/mockData"
 import { BatteryStatus } from "./BatteryStatus"
 import { ChargerPanel } from "./ChargerPanel"
-import { fetchChargerStatuses, fetchAvailableChargerInfo } from "@/services/chargerApi"
+import { fetchChargerStatuses, fetchChargerInfo } from "@/services/chargerApi"
 import { loadingStyles } from "@/lib/utils/style-utils"
 
 export default function StationDetailPage() {
   const [station, setStation] = useState<StationOverviewData | null>(null)
   const [chargerStatuses, setChargerStatuses] = useState<ChargerStatusInfo[]>([])
-  const [chargerInfoMap, setChargerInfoMap] = useState<Map<number, AvailableChargerResponse>>(new Map())
+  const [chargerInfoMap, setChargerInfoMap] = useState<Map<number, ChargerInfoResponse>>(new Map())
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,22 +54,23 @@ export default function StationDetailPage() {
 
   // 충전기 상태 정보가 있으면 각 충전기의 상세 정보 가져오기
   useEffect(() => {
-    if (chargerStatuses.length === 0) return
+    if (!station || chargerStatuses.length === 0) return
 
     const loadChargerDetails = async () => {
       try {
         setLoading(true)
-        const infoMap = new Map<number, AvailableChargerResponse>()
+        const infoMap = new Map<number, ChargerInfoResponse>()
 
         // 각 충전기에 대해 병렬로 API 호출 실행
         const promises = chargerStatuses.map(async (status) => {
-          if (status.chargerStatus === "AVAILABLE") {
-            console.log(`충전기 ${status.evseId}의 상세 정보 요청 중...`)
-            const info = await fetchAvailableChargerInfo(status.evseId)
-            console.log(`충전기 ${status.evseId}의 상세 정보 수신 완료:`, info)
-            infoMap.set(status.evseId, info)
-          }
-          // 다른 상태에 대한 처리는 필요시 추가
+          // 충전기 상태에 따라 다른 엔드포인트 호출
+          const statusType = status.chargerStatus === "AVAILABLE" ? "available" : "unavailable"
+          console.log(`충전기 ${status.evseId}의 상세 정보 요청 중... (상태: ${statusType})`)
+
+          const info = await fetchChargerInfo(station.stationId, status.evseId, statusType)
+          console.log(`충전기 ${status.evseId}의 상세 정보 수신 완료:`, info)
+
+          infoMap.set(status.evseId, info)
         })
 
         // 모든 API 호출이 완료될 때까지 대기
@@ -86,7 +87,7 @@ export default function StationDetailPage() {
     }
 
     loadChargerDetails()
-  }, [chargerStatuses])
+  }, [chargerStatuses, station])
 
   // 로딩 중이거나 오류 발생 시 표시
   if (loading) {
@@ -134,12 +135,11 @@ export default function StationDetailPage() {
                     charger={{
                       id: status.evseId.toString(),
                       status: status.chargerStatus,
-                      statusText: status.chargerStatus === "AVAILABLE" ? "사용가능" : "사용중",
+                      statusText: status.chargerStatus === "AVAILABLE" ? "사용가능" : "사용불가",
                     }}
                     data={mockData}
                     apiData={chargerInfo}
                     showDetails={true}
-                    // 모든 충전기에 대해 요약 정보 표시 (각각의 데이터로)
                     showSummary={status.chargerStatus === "AVAILABLE"}
                   />
                 )
