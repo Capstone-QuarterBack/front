@@ -177,12 +177,12 @@ export default function UserManagement() {
     {
       header: "",
       accessor: "actions",
-      cellRenderer: (value: any, user: User) => (
+      cellRenderer: (value: any, row: Record<string, any>) => (
         <div className="flex gap-2 justify-end">
           <Button size="sm" variant="outline" className="h-7 text-xs">
             수정
           </Button>
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleViewUser(user)}>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleViewUser(row as User)}>
             조회
           </Button>
         </div>
