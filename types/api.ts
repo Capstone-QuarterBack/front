@@ -1,10 +1,10 @@
 // 충전기 상태 정보 타입
 export interface ChargerStatusInfo {
   evseId: number
-  chargerStatus: string
+  chargerStatus: string // "AVAILABLE" | "OCCUPIED" | "UNAVAILABLE"
 }
 
-// 충전기 정보 응답 타입 (available/unavailable 공통)
+// 충전기 정보 응답 타입 (available/occupied/unavailable 공통)
 export interface ChargerInfoResponse {
   usages: ChargerUsage[]
   currentPage: number

@@ -69,7 +69,21 @@ export default function StationDetailPage() {
         const promises = chargerStatuses.map(async (status) => {
           try {
             // 충전기 상태에 따라 다른 엔드포인트 호출
-            const statusType = status.chargerStatus === "AVAILABLE" ? "available" : "unavailable"
+            let statusType: "available" | "occupied" | "unavailable"
+
+            switch (status.chargerStatus) {
+              case "AVAILABLE":
+                statusType = "available"
+                break
+              case "OCCUPIED":
+                statusType = "occupied"
+                break
+              case "UNAVAILABLE":
+              default:
+                statusType = "unavailable"
+                break
+            }
+
             console.log(`충전기 ${status.evseId}의 상세 정보 요청 중... (상태: ${statusType})`)
 
             const info = await fetchChargerInfo(station.stationId, status.evseId, statusType)
@@ -139,13 +153,21 @@ export default function StationDetailPage() {
                 const chargerInfo = chargerInfoMap.get(status.evseId)
                 console.log(`충전기 ${status.evseId} 정보 렌더링:`, chargerInfo)
 
+                // 충전기 상태에 따른 텍스트 설정
+                let statusText = "사용가능"
+                if (status.chargerStatus === "OCCUPIED") {
+                  statusText = "이용중"
+                } else if (status.chargerStatus === "UNAVAILABLE") {
+                  statusText = "사용불가"
+                }
+
                 return (
                   <ChargerPanel
                     key={status.evseId}
                     charger={{
                       id: status.evseId.toString(),
                       status: status.chargerStatus,
-                      statusText: status.chargerStatus === "AVAILABLE" ? "사용가능" : "사용불가",
+                      statusText: statusText,
                     }}
                     data={mockData}
                     apiData={chargerInfo}

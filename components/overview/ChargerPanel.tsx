@@ -15,6 +15,8 @@ interface ChargerPanelProps {
 export function ChargerPanel({ charger, data, apiData, showDetails = false, showSummary = false }: ChargerPanelProps) {
   // 사용가능 상태인지 확인
   const isAvailable = charger.status === "AVAILABLE"
+  // 사용중 상태인지 확인
+  const isOccupied = charger.status === "OCCUPIED"
   // 사용불가 상태인지 확인
   const isUnavailable = charger.status === "UNAVAILABLE"
 
@@ -44,8 +46,8 @@ export function ChargerPanel({ charger, data, apiData, showDetails = false, show
     <div className="bg-zinc-800 rounded-lg p-4 h-full">
       <ChargerStatus id={charger.id} status={charger.status} statusText={charger.statusText} />
 
-      {/* 사용불가 상태인 충전기에는 현재 충전 정보 표시 */}
-      {isUnavailable && (
+      {/* 사용중 또는 사용불가 상태인 충전기에는 현재 충전 정보 표시 */}
+      {(isOccupied || isUnavailable) && (
         <div className="mt-4">
           <div className="bg-zinc-900 rounded-lg p-4">
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -114,7 +116,7 @@ export function ChargerPanel({ charger, data, apiData, showDetails = false, show
             </div>
           </div>
 
-          {/* 사용불가 충전기에도 과거 사용 내역 표시 */}
+          {/* 사용중 또는 사용불가 충전기에도 과거 사용 내역 표시 */}
           {apiData && apiData.usages.length > 0 && (
             <div className="mt-4">
               <UsageHistory data={usageHistory} />
