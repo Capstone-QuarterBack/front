@@ -142,7 +142,7 @@ export default function StationDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* 왼쪽 패널 - ESS 배터리 상태 */}
           <div>
-            <BatteryStatus data={mockData} />
+            <BatteryStatus stationId={station.stationId} data={mockData} />
           </div>
 
           {/* 중앙 및 오른쪽 패널 - 충전기 상태 및 요약 정보 */}
