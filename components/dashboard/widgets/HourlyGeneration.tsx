@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/Card"
 import { LineChart } from "@/components/charts/LineChart"
-import { generateChartData } from "@/lib/data-utils"
+import { fetchDischargeByHour, type DischargeByHourData } from "@/services/api"
+import type { ChartData } from "@/types/chart"
 import { COLORS } from "@/lib/constants/theme"
 
 interface HourlyGenerationProps {
@@ -12,21 +13,28 @@ interface HourlyGenerationProps {
 }
 
 export function HourlyGeneration({ className = "", refreshInterval = 0 }: HourlyGenerationProps) {
-  const [chartData, setChartData] = useState(generateChartData())
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [chartData, setChartData] = useState<ChartData[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // 데이터 로드 함수 (실제 API 연동 전까지는 더미 데이터 사용)
+  // 데이터 로드 함수
   const loadData = async () => {
     try {
       setIsLoading(true)
-      // 실제 API 연동 시 아래 주석 해제
-      // const data = await fetchDischargeByHour()
-      // setChartData(data.map(item => ({ x: item.hour, y: item.dischargeKwh / 1000 })))
+      setError(null)
 
-      // 더미 데이터 생성
-      setChartData(generateChartData())
+      const data = await fetchDischargeByHour()
+
+      // API 응답 데이터를 차트 데이터 형식으로 변환
+      const formattedData: ChartData[] = data.map((item: DischargeByHourData) => ({
+        x: item.hour,
+        y: item.dischargeKwh / 1000, // kWh 단위로 변환 (값이 너무 크면 스케일 조정)
+      }))
+
+      setChartData(formattedData)
     } catch (err) {
-      console.error("데이터를 불러오는 중 오류가 발생했습니다:", err)
+      console.error("데이터 로드 오류:", err)
+      setError("데이터를 불러오는 중 오류가 발생했습니다.")
     } finally {
       setIsLoading(false)
     }
@@ -49,11 +57,13 @@ export function HourlyGeneration({ className = "", refreshInterval = 0 }: Hourly
 
   return (
     <Card title="시간대별 발전량" className={className}>
-      <div className="relative w-full h-[180px] md:h-[200px] lg:h-[220px]">
+      <div className="relative h-[180px] md:h-[200px] lg:h-[220px]">
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
           </div>
+        ) : error ? (
+          <div className="absolute inset-0 flex items-center justify-center text-red-500">{error}</div>
         ) : (
           <LineChart data={chartData} color={COLORS.primary} />
         )}
