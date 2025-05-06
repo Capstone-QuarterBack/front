@@ -92,7 +92,7 @@ export function StationInfo({ className = "", refreshInterval = 0 }) {
 
   // 충전소 클릭 핸들러
   const handleViewStationDetails = (station: StationData) => {
-    // 충전소 데이터를 Overview 페이지에서 사용하는 형식으로 변환
+    // 충전소 데이터를 URL 파라미터로 전달
     const stationOverviewData = {
       stationId: station.stationId,
       stationName: station.stationName,
