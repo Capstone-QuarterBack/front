@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui/Card"
+import { CustomCard } from "@/components/ui/CustomCard"
 import { TradingPanel } from "@/components/dashboard/TradingPanel"
 
 export function ElectricityTrading() {
@@ -29,7 +29,7 @@ export function ElectricityTrading() {
   }
 
   return (
-    <Card
+    <CustomCard
       title="실시간 전기 거래 현황"
       headerRight={
         <div className="text-xs">
@@ -41,6 +41,6 @@ export function ElectricityTrading() {
         <TradingPanel data={buyData} aspectRatio="1.5/1" />
         <TradingPanel data={sellData} aspectRatio="1.5/1" />
       </div>
-    </Card>
+    </CustomCard>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/Card"
+import { CustomCard } from "@/components/ui/CustomCard"
 import { LineChart } from "@/components/charts/LineChart"
 import { fetchDischargeByHour, type DischargeByHourData } from "@/services/api"
 import type { ChartData } from "@/types/chart"
@@ -70,7 +70,7 @@ export function HourlyGeneration({ className = "", refreshInterval = 0 }: Hourly
   }, [refreshInterval])
 
   return (
-    <Card title="시간대별 발전량" className={className}>
+    <CustomCard title="시간대별 발전량" className={className}>
       <div className="relative h-[180px] md:h-[200px] lg:h-[220px]">
         {isLoading ? (
           <div className={loadingStyles.container}>
@@ -82,6 +82,6 @@ export function HourlyGeneration({ className = "", refreshInterval = 0 }: Hourly
           <LineChart data={chartData} color={COLORS.primary} />
         )}
       </div>
-    </Card>
+    </CustomCard>
   )
 }

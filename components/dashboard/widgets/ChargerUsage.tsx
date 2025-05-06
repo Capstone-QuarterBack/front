@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/Card"
+import { CustomCard } from "@/components/ui/CustomCard"
 import { fetchChargerUsage, type ChargerUsageData } from "@/services/api"
 import { loadingStyles, errorStyles } from "@/lib/utils/style-utils"
 
@@ -60,7 +60,7 @@ export function ChargerUsage({ className = "", refreshInterval = 0 }: ChargerUsa
   }, [refreshInterval])
 
   return (
-    <Card title="충전기 사용 정보" className={className}>
+    <CustomCard title="충전기 사용 정보" className={className}>
       <div className="relative h-[180px] md:h-[200px] lg:h-[220px]">
         {isLoading ? (
           <div className={loadingStyles.container}>
@@ -97,6 +97,6 @@ export function ChargerUsage({ className = "", refreshInterval = 0 }: ChargerUsa
           </div>
         )}
       </div>
-    </Card>
+    </CustomCard>
   )
 }

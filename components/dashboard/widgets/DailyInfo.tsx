@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/Card"
+import { CustomCard } from "@/components/ui/CustomCard"
 import { fetchDailySummary, type DailySummaryData } from "@/services/api"
 import { loadingStyles, errorStyles } from "@/lib/utils/style-utils"
 import { formatNumber } from "@/lib/utils/number-utils"
@@ -61,7 +61,7 @@ export function DailyInfo({ className = "", refreshInterval = 0 }: DailyInfoProp
   }, [refreshInterval])
 
   return (
-    <Card title="일일 정보" className={className}>
+    <CustomCard title="일일 정보" className={className}>
       <div className="relative space-y-4">
         {isLoading ? (
           <div className={loadingStyles.container}>
@@ -86,6 +86,6 @@ export function DailyInfo({ className = "", refreshInterval = 0 }: DailyInfoProp
           </>
         ) : null}
       </div>
-    </Card>
+    </CustomCard>
   )
 }

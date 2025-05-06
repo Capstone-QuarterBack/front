@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Search } from "lucide-react"
-import { Card } from "@/components/ui/Card"
+import { CustomCard } from "@/components/ui/CustomCard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { fetchStations, type StationData } from "@/services/api"
@@ -118,7 +118,7 @@ export function StationInfo({ className = "", refreshInterval = 0 }) {
   }
 
   return (
-    <Card
+    <CustomCard
       title="등록 충전소 정보"
       className={className}
       headerRight={
@@ -195,6 +195,6 @@ export function StationInfo({ className = "", refreshInterval = 0 }) {
           </div>
         )}
       </div>
-    </Card>
+    </CustomCard>
   )
 }
