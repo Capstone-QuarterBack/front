@@ -1,8 +1,13 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import Script from "next/script"
 import type { StationOverviewData } from "@/services/api"
+import {
+  ensureKakaoMapLoaded,
+  getMarkerImageByStatus,
+  getStatusColor,
+  getStatusText,
+} from "@/lib/utils/kakao-map-utils"
 
 declare global {
   interface Window {
@@ -22,49 +27,50 @@ export function KakaoMap({ stations, onSelectStation, selectedStation }: KakaoMa
   const [markers, setMarkers] = useState<any[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // 카카오맵 스크립트 로드 완료 후 실행될 함수
-  const handleKakaoMapLoaded = () => {
-    setIsLoaded(true)
-  }
-
-  // 지도 초기화
+  // 카카오맵 API 로드 및 초기화
   useEffect(() => {
-    if (!isLoaded || !mapRef.current || stations.length === 0) return
+    if (!mapRef.current) return
 
-    const initMap = () => {
+    const initializeMap = async () => {
       try {
-        // 지도 생성
-        const options = {
-          center: new window.kakao.maps.LatLng(37.5665, 126.978), // 서울 중심 좌표
-          level: 7, // 확대 레벨
+        // 카카오맵 API 로드 확인
+        await ensureKakaoMapLoaded()
+
+        // 카카오맵 API가 로드되었으면 지도 초기화
+        if (window.kakao && window.kakao.maps) {
+          // 지도 생성
+          const options = {
+            center: new window.kakao.maps.LatLng(37.5665, 126.978), // 서울 중심 좌표
+            level: 7, // 확대 레벨
+          }
+
+          const map = new window.kakao.maps.Map(mapRef.current, options)
+          setMapInstance(map)
+
+          // 지도 컨트롤 추가
+          const zoomControl = new window.kakao.maps.ZoomControl()
+          map.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT)
+
+          // 지도 타입 컨트롤 추가
+          const mapTypeControl = new window.kakao.maps.MapTypeControl()
+          map.addControl(mapTypeControl, window.kakao.maps.ControlPosition.TOPRIGHT)
+
+          setIsLoaded(true)
+          console.log("카카오맵 초기화 완료")
         }
-
-        const map = new window.kakao.maps.Map(mapRef.current, options)
-        setMapInstance(map)
-
-        // 지도 컨트롤 추가
-        const zoomControl = new window.kakao.maps.ZoomControl()
-        map.addControl(zoomControl, window.kakao.maps.ControlPosition.RIGHT)
-
-        // 지도 타입 컨트롤 추가
-        const mapTypeControl = new window.kakao.maps.MapTypeControl()
-        map.addControl(mapTypeControl, window.kakao.maps.ControlPosition.TOPRIGHT)
       } catch (error) {
         console.error("카카오맵 초기화 오류:", error)
       }
     }
 
-    // 카카오맵 API가 로드된 경우에만 지도 초기화
-    if (window.kakao && window.kakao.maps) {
-      initMap()
-    } else {
-      console.error("카카오맵 API가 로드되지 않았습니다.")
-    }
-  }, [isLoaded, stations])
+    initializeMap()
+  }, [])
 
   // 마커 생성 및 업데이트
   useEffect(() => {
     if (!mapInstance || stations.length === 0) return
+
+    console.log("마커 생성 시작")
 
     // 기존 마커 제거
     markers.forEach((marker) => marker.setMap(null))
@@ -141,65 +147,19 @@ export function KakaoMap({ stations, onSelectStation, selectedStation }: KakaoMa
         selectedMarker.infoWindow.open(mapInstance, selectedMarker)
       }
     }
+
+    console.log("마커 생성 완료")
   }, [mapInstance, stations, selectedStation, onSelectStation])
 
-  // 충전소 상태에 따른 마커 이미지 URL 반환
-  const getMarkerImageByStatus = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerGreen.png"
-      case "INACTIVE":
-        return "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerRed.png"
-      case "MAINTENANCE":
-        return "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerYellow.png"
-      default:
-        return "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_black.png"
-    }
-  }
-
-  // 충전소 상태에 따른 텍스트 색상 반환
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "#10B981" // green-500
-      case "INACTIVE":
-        return "#EF4444" // red-500
-      case "MAINTENANCE":
-        return "#F59E0B" // amber-500
-      default:
-        return "#71717A" // zinc-400
-    }
-  }
-
-  // 충전소 상태에 따른 텍스트 반환
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "사용가능"
-      case "INACTIVE":
-        return "사용중"
-      case "MAINTENANCE":
-        return "수리중"
-      default:
-        return "사용중지"
-    }
-  }
-
   return (
-    <>
-      <Script
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=01401f33c63d337526c796d017d4737d&libraries=services,clusterer,drawing"
-        strategy="afterInteractive"
-        onLoad={handleKakaoMapLoaded}
-      />
-      <div className="relative w-full h-full bg-zinc-800">
-        <div ref={mapRef} className="w-full h-full" />
-        {!isLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-zinc-800 bg-opacity-70">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
-          </div>
-        )}
-      </div>
-    </>
+    <div className="relative w-full h-full bg-zinc-800">
+      <div ref={mapRef} className="w-full h-full" />
+      {!isLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-800 bg-opacity-70">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+          <div className="ml-3 text-white">카카오맵 로딩 중...</div>
+        </div>
+      )}
+    </div>
   )
 }
