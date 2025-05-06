@@ -50,9 +50,12 @@ export interface StationDetailData {
 }
 
 export interface StationSummaryData {
-  totalUsage: number
-  totalPower: number
+  totalChargedEnergy: number // 변경: totalUsage -> totalChargedEnergy
+  totalVehicleCount: number // 변경: totalPower -> totalVehicleCount
   totalRevenue: number
+  chargedEnergyDiffPercent?: number // 추가: 증감률 필드
+  vehicleCountDiffPercent?: number // 추가: 증감률 필드
+  revenueDiffPercent?: number // 추가: 증감률 필드
 }
 
 export interface MockDataType {
