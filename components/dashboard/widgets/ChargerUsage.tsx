@@ -59,50 +59,6 @@ export function ChargerUsage({ className = "", refreshInterval = 0 }: ChargerUsa
     }
   }, [refreshInterval])
 
-  // 모의 데이터 생성 (실제 구현에서는 API에서 가져와야 함)
-  const mockData = [
-    {
-      timestamp: "2025/03/21 00:10:00",
-      location: "충전기 위치",
-      chargerNumber: "충전기 번호",
-      usage: "100(kWh)",
-      price: "21,233(kWh)",
-      transactionId: "T999999-92",
-    },
-    {
-      timestamp: "2025/03/21 00:10:00",
-      location: "충전기 위치",
-      chargerNumber: "충전기 번호",
-      usage: "100(kWh)",
-      price: "21,233(kWh)",
-      transactionId: "T999999-92",
-    },
-    {
-      timestamp: "2025/03/21 00:10:00",
-      location: "충전기 위치",
-      chargerNumber: "충전기 번호",
-      usage: "100(kWh)",
-      price: "21,233(kWh)",
-      transactionId: "T999999-92",
-    },
-    {
-      timestamp: "2025/03/21 00:10:00",
-      location: "충전기 위치",
-      chargerNumber: "충전기 번호",
-      usage: "100(kWh)",
-      price: "21,233(kWh)",
-      transactionId: "T999999-92",
-    },
-    {
-      timestamp: "2025/03/21 00:10:00",
-      location: "충전기 위치",
-      chargerNumber: "충전기 번호",
-      usage: "100(kWh)",
-      price: "21,233(kWh)",
-      transactionId: "T999999-92",
-    },
-  ]
-
   return (
     <Card title="충전기 사용 정보" className={className}>
       <div className="relative h-[180px] md:h-[200px] lg:h-[220px]">
@@ -113,7 +69,7 @@ export function ChargerUsage({ className = "", refreshInterval = 0 }: ChargerUsa
         ) : error ? (
           <div className={errorStyles.container}>{error}</div>
         ) : (
-          <div className="overflow-auto h-full">
+          <div className="overflow-auto h-full bg-zinc-900">
             <table className="w-full text-sm">
               <thead className="bg-zinc-800 border-b border-zinc-700">
                 <tr>
@@ -126,10 +82,10 @@ export function ChargerUsage({ className = "", refreshInterval = 0 }: ChargerUsa
                 </tr>
               </thead>
               <tbody>
-                {mockData.map((item, index) => (
+                {data.map((item, index) => (
                   <tr key={index} className="border-b border-zinc-700">
                     <td className="py-3 px-3">{item.timestamp}</td>
-                    <td className="py-3 px-3">{item.location}</td>
+                    <td className="py-3 px-3">{item.chargerLocation}</td>
                     <td className="py-3 px-3">{item.chargerNumber}</td>
                     <td className="py-3 px-3">{item.usage}</td>
                     <td className="py-3 px-3">{item.price}</td>
