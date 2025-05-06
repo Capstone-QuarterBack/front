@@ -7,6 +7,7 @@ import type { ChargerInfoResponse } from "@/types/api"
 import { fetchChargerInfo } from "@/services/chargerApi"
 import { loadingStyles, errorStyles } from "@/lib/utils/style-utils"
 import { formatDate } from "@/lib/utils/date-utils"
+import { KakaoMap } from "@/components/overview/KakaoMap"
 
 interface StationDetailModalProps {
   station: StationOverviewData | null
@@ -19,6 +20,7 @@ export function StationDetailModal({ station, onClose, isOpen }: StationDetailMo
   const [chargerInfo, setChargerInfo] = useState<ChargerInfoResponse | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
+  const [mapStations, setMapStations] = useState<StationOverviewData[]>([])
 
   // 충전기 정보 가져오기
   useEffect(() => {
@@ -45,6 +47,12 @@ export function StationDetailModal({ station, onClose, isOpen }: StationDetailMo
 
     loadChargerInfo()
   }, [station, isOpen])
+
+  useEffect(() => {
+    if (station) {
+      setMapStations([station])
+    }
+  }, [station])
 
   if (!station || !isOpen) return null
 
@@ -161,6 +169,11 @@ export function StationDetailModal({ station, onClose, isOpen }: StationDetailMo
             {/* 왼쪽 패널 - ESS 배터리 상태 */}
             <div className="bg-zinc-800 rounded-lg p-4 flex flex-col">
               <h3 className="text-lg font-bold mb-4 text-center">{station.stationName}</h3>
+
+              {/* 지도 영역 */}
+              <div className="h-[300px] bg-zinc-800 rounded-lg overflow-hidden mb-4">
+                {station && <KakaoMap stations={mapStations} onSelectStation={() => {}} selectedStation={station} />}
+              </div>
 
               <div className="mb-4">
                 <h4 className="text-sm text-zinc-400 mb-2">ESS 배터리 상태</h4>

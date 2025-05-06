@@ -8,6 +8,8 @@ import { BatteryStatus } from "./BatteryStatus"
 import { ChargerPanel } from "./ChargerPanel"
 import { fetchChargerStatuses, fetchChargerInfo } from "@/services/chargerApi"
 import { loadingStyles } from "@/lib/utils/style-utils"
+// Import the KakaoMap component
+import { KakaoMap } from "@/components/overview/KakaoMap"
 
 export default function StationDetailPage() {
   const [station, setStation] = useState<StationOverviewData | null>(null)
@@ -15,6 +17,9 @@ export default function StationDetailPage() {
   const [chargerInfoMap, setChargerInfoMap] = useState<Map<number, ChargerInfoResponse>>(new Map())
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  // Add a mapStations state to store the selected station for the map
+  // Add this after the other useState declarations:
+  const [mapStations, setMapStations] = useState<StationOverviewData[]>([])
 
   // URL에서 충전소 데이터 가져오기
   useEffect(() => {
@@ -124,6 +129,14 @@ export default function StationDetailPage() {
     loadChargerDetails()
   }, [chargerStatuses, station])
 
+  // Add this effect to update mapStations when station changes
+  // Add this after the other useEffect hooks:
+  useEffect(() => {
+    if (station) {
+      setMapStations([station])
+    }
+  }, [station])
+
   // 로딩 중이거나 오류 발생 시 표시
   if (loading) {
     return (
@@ -188,6 +201,15 @@ export default function StationDetailPage() {
                   />
                 )
               })}
+            </div>
+          </div>
+          {/* 지도 영역 - 추가 */}
+          <div className="lg:col-span-3 mb-4">
+            <div className="bg-zinc-800 rounded-lg p-4">
+              <h3 className="text-lg font-bold mb-4">충전소 위치</h3>
+              <div className="h-[300px]">
+                {station && <KakaoMap stations={mapStations} onSelectStation={() => {}} selectedStation={station} />}
+              </div>
             </div>
           </div>
         </div>

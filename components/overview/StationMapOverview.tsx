@@ -6,7 +6,8 @@ import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { StationLegend } from "@/components/overview/StationLegend"
-import { SimpleMap } from "@/components/overview/SimpleMap"
+// Import the KakaoMap component instead of SimpleMap
+import { KakaoMap } from "@/components/overview/KakaoMap"
 import { fetchStationOverview, type StationOverviewData } from "@/services/api"
 import { loadingStyles, errorStyles } from "@/lib/utils/style-utils"
 
@@ -110,7 +111,7 @@ export default function StationMapOverview() {
           ) : error ? (
             <div className={errorStyles.container}>{error}</div>
           ) : (
-            <SimpleMap
+            <KakaoMap
               stations={filteredStations}
               onSelectStation={handleStationSelect}
               selectedStation={selectedStation}
