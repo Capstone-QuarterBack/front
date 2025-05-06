@@ -90,6 +90,33 @@ export function StationInfo({ className = "", refreshInterval = 0 }) {
     }
   }
 
+  // 충전소 클릭 핸들러
+  const handleViewStationDetails = (station: StationData) => {
+    // 충전소 데이터를 Overview 페이지에서 사용하는 형식으로 변환
+    const stationOverviewData = {
+      stationId: station.stationId,
+      stationName: station.stationName,
+      latitude: 37.5665, // 기본값 (실제로는 API에서 가져와야 함)
+      longitude: 126.978, // 기본값 (실제로는 API에서 가져와야 함)
+      status: station.stationStatus,
+    }
+
+    // 충전소 데이터를 URL 파라미터로 전달
+    const stationData = encodeURIComponent(JSON.stringify(stationOverviewData))
+
+    // 새 창에서 충전소 상세 정보 페이지 열기
+    const width = Math.min(1400, window.screen.width * 0.9)
+    const height = Math.min(900, window.screen.height * 0.9)
+    const left = (window.screen.width - width) / 2
+    const top = (window.screen.height - height) / 2
+
+    window.open(
+      `/station-detail?stationData=${stationData}`,
+      "stationDetail",
+      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`,
+    )
+  }
+
   return (
     <Card
       title="등록 충전소 정보"
@@ -145,11 +172,21 @@ export function StationInfo({ className = "", refreshInterval = 0 }) {
                     </td>
                     <td className="py-3">Regist Date {formatDate(station.regDate)}</td>
                     <td className="py-3 pr-3">
-                      <StationStatusIndicator
-                        available={station.avaliableCount}
-                        occupied={station.occupiedCount}
-                        unavailable={station.unAvaliableCount}
-                      />
+                      <div className="flex items-center justify-between">
+                        <StationStatusIndicator
+                          available={station.avaliableCount}
+                          occupied={station.occupiedCount}
+                          unavailable={station.unAvaliableCount}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="ml-2 text-xs h-7 px-2"
+                          onClick={() => handleViewStationDetails(station)}
+                        >
+                          상세 정보 보기
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

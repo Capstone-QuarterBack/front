@@ -1,14 +1,26 @@
+"use client"
+
 import { Battery } from "lucide-react"
 
 interface StationStatusIndicatorProps {
   available: number
   occupied: number
   unavailable: number
+  onClick?: () => void
 }
 
-export function StationStatusIndicator({ available, occupied, unavailable }: StationStatusIndicatorProps) {
+export function StationStatusIndicator({ available, occupied, unavailable, onClick }: StationStatusIndicatorProps) {
   return (
-    <div className="flex items-center justify-end gap-1">
+    <div
+      className="flex items-center justify-end gap-1"
+      onClick={(e) => {
+        // 이벤트 버블링 방지 (부모 요소의 클릭 이벤트가 발생하지 않도록)
+        if (onClick) {
+          e.stopPropagation()
+          onClick()
+        }
+      }}
+    >
       <Battery className="h-5 w-5 text-zinc-400" />
 
       {/* 사용 가능한 충전기 (초록색) - 항상 표시 */}

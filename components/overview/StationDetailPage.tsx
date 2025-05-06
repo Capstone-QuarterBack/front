@@ -24,11 +24,14 @@ export default function StationDetailPage() {
     if (stationData) {
       try {
         const decodedData = JSON.parse(decodeURIComponent(stationData))
+        console.log("URL에서 가져온 충전소 데이터:", decodedData)
         setStation(decodedData)
       } catch (error) {
         console.error("충전소 데이터 파싱 오류:", error)
         setError("충전소 데이터를 불러오는 중 오류가 발생했습니다.")
       }
+    } else {
+      setError("URL에서 충전소 데이터를 찾을 수 없습니다.")
     }
   }, [])
 
@@ -46,6 +49,15 @@ export default function StationDetailPage() {
       } catch (error) {
         console.error("충전기 상태 정보 로드 오류:", error)
         setError("충전기 상태 정보를 불러오는 중 오류가 발생했습니다.")
+
+        // 오류 발생 시 모의 데이터 사용
+        console.log("오류 발생으로 모의 충전기 상태 데이터 사용")
+        setChargerStatuses([
+          { evseId: 1, chargerStatus: "AVAILABLE" },
+          { evseId: 2, chargerStatus: "OCCUPIED" },
+          { evseId: 3, chargerStatus: "UNAVAILABLE" },
+          { evseId: 4, chargerStatus: "AVAILABLE" },
+        ])
       } finally {
         setLoading(false)
       }
