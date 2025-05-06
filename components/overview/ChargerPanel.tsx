@@ -23,24 +23,24 @@ export function ChargerPanel({ charger, data, apiData, showDetails = false, show
   // API 데이터가 있으면 사용, 없으면 모의 데이터 사용
   const usageHistory = apiData?.usages || data.usageHistory
 
-  // 사용 내역 데이터에서 총 충전량, 총 가격 계산
-  const totalChargedEnergy = apiData?.usages.reduce((sum, usage) => sum + usage.chargedEnergy, 0) || 0
-  const totalRevenue = apiData?.usages.reduce((sum, usage) => sum + usage.price, 0) || 0
-  const totalVehicleCount = apiData?.totalElements || 0
-
-  // 요약 데이터 생성
-  const summaryData = {
-    totalUsage: totalChargedEnergy,
-    totalPower: totalVehicleCount,
-    totalRevenue: totalRevenue,
-  }
-
-  // 증감률 데이터 (모의 데이터)
-  const diffData = {
-    usageDiff: Math.floor(Math.random() * 20) - 10, // -10 ~ 10 사이의 랜덤 값
-    powerDiff: Math.floor(Math.random() * 20) - 10,
-    revenueDiff: Math.floor(Math.random() * 20) - 10,
-  }
+  // API 데이터로 요약 정보 생성
+  const summaryData = apiData
+    ? {
+        totalChargedEnergy: apiData.totalChargedEnergy,
+        totalVehicleCount: apiData.totalVehicleCount,
+        totalRevenue: apiData.totalRevenue,
+        chargedEnergyDiffPercent: apiData.chargedEnergyDiffPercent,
+        vehicleCountDiffPercent: apiData.vehicleCountDiffPercent,
+        revenueDiffPercent: apiData.revenueDiffPercent,
+      }
+    : {
+        totalChargedEnergy: data.totalUsage,
+        totalVehicleCount: data.totalPower,
+        totalRevenue: data.totalRevenue,
+        chargedEnergyDiffPercent: 3,
+        vehicleCountDiffPercent: 6,
+        revenueDiffPercent: 3,
+      }
 
   return (
     <div className="bg-zinc-800 rounded-lg p-4 h-full">
@@ -129,16 +129,7 @@ export function ChargerPanel({ charger, data, apiData, showDetails = false, show
       {isAvailable && (
         <>
           {showDetails && apiData && apiData.usages.length > 0 && <UsageHistory data={usageHistory} />}
-          {showSummary && (
-            <StationSummary
-              data={summaryData}
-              diffData={{
-                usageDiff: diffData.usageDiff,
-                powerDiff: diffData.powerDiff,
-                revenueDiff: diffData.revenueDiff,
-              }}
-            />
-          )}
+          {showSummary && <StationSummary data={summaryData} />}
         </>
       )}
     </div>

@@ -90,8 +90,8 @@ export default function StationDetailPage() {
             console.log(`충전기 ${status.evseId}의 상세 정보 수신 완료:`, info)
 
             infoMap.set(status.evseId, info)
-          } catch (error) {
-            console.error(`충전기 ${status.evseId} 정보 요청 실패:`, error)
+          } catch (fetchError) {
+            console.error(`충전기 ${status.evseId} 정보 요청 실패:`, fetchError)
             // 개별 충전기 오류는 전체 프로세스를 중단하지 않음
           }
         })
