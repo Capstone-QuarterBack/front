@@ -6,6 +6,12 @@ export interface ChargerStatusInfo {
 
 // 충전기 정보 응답 타입 (available/occupied/unavailable 공통)
 export interface ChargerInfoResponse {
+  totalChargedEnergy: number
+  totalVehicleCount: number
+  totalRevenue: number
+  chargedEnergyDiffPercent: number
+  vehicleCountDiffPercent: number
+  revenueDiffPercent: number
   usages: ChargerUsage[]
   currentPage: number
   totalPages: number
