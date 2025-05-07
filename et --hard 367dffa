@@ -1,0 +1,63 @@
+[33mde29af6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mkakaomap-fresh-start[m[33m)[m feat: fix UI and fetch real data via API
+[33m367dffa[m revert: restore original charger usage UI table format
+[33me6646d5[m feat: add charger click to navigate to detail page
+[33m3c1486b[m feat: show usage history only when charger is unavailable
+[33m376f27a[m chart repair
+[33m3ddf0ab[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m5b79c01[m feat: update ChargerPanel to use real API data for usage history
+[33m7c1a8a0[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m2748187[m feat: use API data in StationSummary component
+[33mcc0d0c1[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m4a167a9[m feat: use real API data in StationDetailModal
+[33m0deb118[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m9214963[m fix: resolve graph display and Card component error
+[33mde53504[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m51fed5b[m feat: enhance congestion graph in BatteryStatus component
+[33mfc844da[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m93b44da[m fix: resolve TypeScript type mismatch in UserManagement.tsx
+[33mf6c24fa[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33mf183923[m feat: add LineChart and BarChart components
+[33md37d780[m feat: integrate new API endpoints for monitoring
+[33ma18929a[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33ma48e325[m feat: add UNAVAILABLE status for chargers
+[33m8711586[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33me411d5f[m fix: switch to real API calls for charger statuses
+[33m2ac4c91[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m4159d44[m fix: correct charger status API calls and logging
+[33me1ed715[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m70fc3f5[m feat: update API endpoints and response format for chargers
+[33m70f5dd0[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33mc38de26[m feat: apply charger API responses correctly to UI
+[33m15c0b27[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m438d90d[m feat: highlight key charging info in active panel
+[33m494b918[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m7de13c1[m feat: add custom map for station visualization
+[33md0461be[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m608d858[m feat: add transactions page with detailed UI
+[33m63e8912[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m37f5094[m feat: add user registration modal
+[33mc2adb54[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m6f0b57a[m feat: add user management UI and routing
+[33m10de51e[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33mc9e7249[m feat: display all charger statuses in UI
+[33md2573e3[m feat: display all charger statuses in UI
+[33mbfae1ea[m feat: update StationInfo to display charger status icons
+[33m98f28b7[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33me6346a7[m feat: add daily info and charging station APIs
+[33m47dc7a8[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33mf9fb297[m feat: add API for charger usage data and component update
+[33m6f4e60d[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33mfa8673d[m fix: resolve data fetch issue in API service
+[33m5de17df[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m31aa4db[m feat: update API service and HourlyGeneration for hourly data
+[33m939b520[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m88646be[m feat: implement mock hourly generation data API
+[33m27d873b[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33mb92546d[m fix: correct syntax errors in DataTable.tsx
+[33m01c65fc[m fix: correct syntax errors in DataTable.tsx
+[33m984a9eb[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m1d1fb8f[m refactor: enhance responsive layout for charts and tables
+[33mab66e85[m Merge branch 'main' of https://github.com/PlusUltraCode/v0-quarterback-front
+[33m4cb86d9[m test
+[33m49d5ae8[m refactor: refactor code for OOP and maintainable CSS
+[33mc7e9156[m Intialized repository for project Korean website ui
