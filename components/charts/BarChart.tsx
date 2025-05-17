@@ -1,65 +1,114 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { Chart, type ChartConfiguration, registerables, type TooltipItem } from "chart.js"
 import type { ChartData } from "@/types/chart"
+
+Chart.register(...registerables)
 
 interface BarChartProps {
   data: ChartData[]
-  color: string
+  color?: string
 }
 
-export function BarChart({ data, color }: BarChartProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+export function BarChart({ data, color = "#4CAF50" }: BarChartProps) {
+  const chartRef = useRef<HTMLCanvasElement>(null)
+  const chartInstance = useRef<Chart | null>(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    if (!chartRef.current || !data || data.length === 0) return
 
-    const ctx = canvas.getContext("2d")
+    const ctx = chartRef.current.getContext("2d")
     if (!ctx) return
 
-    // Set canvas dimensions
-    const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
-    ctx.scale(dpr, dpr)
+    // 기존 차트 인스턴스가 있으면 파괴
+    if (chartInstance.current) {
+      chartInstance.current.destroy()
+    }
 
-    // Clear canvas
-    ctx.clearRect(0, 0, rect.width, rect.height)
+    // 데이터 준비
+    const labels = data.map((item) => item.label || `항목 ${item.x + 1}`)
+    const values = data.map((item) => item.y)
 
-    // Draw chart
-    const padding = 20
-    const chartWidth = rect.width - padding * 2
-    const chartHeight = rect.height - padding * 2
+    // 차트 설정
+    const config: ChartConfiguration = {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "값",
+            data: values,
+            backgroundColor: color,
+            borderColor: color,
+            borderWidth: 1,
+            borderRadius: 4,
+            barThickness: 30,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            enabled: true,
+            mode: "index",
+            intersect: false,
+            callbacks: {
+              label: (context: TooltipItem<"bar">) => `${context.dataset.label}: ${context.parsed.y.toLocaleString()}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false,
+            },
+            ticks: {
+              color: "#888",
+            },
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: "rgba(200, 200, 200, 0.1)",
+            },
+            ticks: {
+              color: "#888",
+              callback: (value: number | string, index: number, ticks: unknown[]) => {
+                if (typeof value === "number") {
+                  return value.toLocaleString()
+                }
+                return value
+              },
+            },
+          },
+        },
+      },
+    }
 
-    // Find min and max values
-    const maxY = Math.max(...data.map((d) => d.y)) * 1.1
-    const minY = 0
+    // 차트 생성
+    chartInstance.current = new Chart(ctx, config)
 
-    // Draw bars
-    const barWidth = (chartWidth / data.length) * 0.8
-    const barSpacing = (chartWidth / data.length) * 0.2
-
-    data.forEach((point, i) => {
-      const x = padding + i * (barWidth + barSpacing)
-      const barHeight = ((point.y - minY) / (maxY - minY)) * chartHeight
-      const y = rect.height - padding - barHeight
-
-      ctx.fillStyle = color
-      ctx.fillRect(x, y, barWidth, barHeight)
-    })
-
-    // Draw x-axis labels
-    ctx.fillStyle = "#666"
-    ctx.font = "10px sans-serif"
-    ctx.textAlign = "center"
-
-    for (let i = 0; i < data.length; i += 4) {
-      const x = padding + i * (barWidth + barSpacing) + barWidth / 2
-      ctx.fillText(i.toString(), x, rect.height - 5)
+    // 컴포넌트 언마운트 시 차트 정리
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy()
+      }
     }
   }, [data, color])
 
-  return <canvas ref={canvasRef} className="w-full h-full" />
+  return (
+    <div className="w-full h-full">
+      {data && data.length > 0 ? (
+        <canvas ref={chartRef} />
+      ) : (
+        <div className="flex items-center justify-center h-full text-gray-400">데이터가 없습니다</div>
+      )}
+    </div>
+  )
 }

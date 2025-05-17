@@ -55,12 +55,22 @@ export default function StatisticsPage() {
   const [tradingPriceData, setTradingPriceData] = useState<PowerTradingPriceData | null>(null)
   const [tradingVolumeData, setTradingVolumeData] = useState<PowerTradingVolumeData | null>(null)
 
+  // 시간 범위 매핑
+  const timeRangeMapping: Record<string, string> = {
+    day: "today",
+    week: "lastweek",
+    month: "lastmonth",
+    year: "lastyear",
+  }
+
   // 데이터 로딩 함수
   const loadData = async () => {
     setLoading(true)
     setError(null)
 
     try {
+      const apiTimeRange = timeRangeMapping[timeRange] || timeRange
+
       // 병렬로 모든 데이터 요청
       const [
         costResult,
@@ -76,18 +86,18 @@ export default function StatisticsPage() {
         tradingPriceResult,
         tradingVolumeResult,
       ] = await Promise.all([
-        fetchCostData(activeTab, timeRange),
-        fetchChargingVolumeData(activeTab, timeRange),
-        fetchChargingInfoData(activeTab, timeRange),
-        fetchChargerStatusData(activeTab, timeRange),
-        fetchPowerTradingData(activeTab, timeRange),
-        fetchStatisticsSummary(timeRange),
-        fetchChargerUptimeData(timeRange),
-        fetchChargerFailureData(timeRange),
-        fetchRepairTimeData(timeRange),
-        fetchPowerTradingRevenueData(timeRange),
-        fetchPowerTradingPriceData(timeRange),
-        fetchPowerTradingVolumeData(timeRange),
+        fetchCostData(activeTab, apiTimeRange),
+        fetchChargingVolumeData(activeTab, apiTimeRange),
+        fetchChargingInfoData(activeTab, apiTimeRange),
+        fetchChargerStatusData(activeTab, apiTimeRange),
+        fetchPowerTradingData(activeTab, apiTimeRange),
+        fetchStatisticsSummary(apiTimeRange),
+        fetchChargerUptimeData(apiTimeRange),
+        fetchChargerFailureData(apiTimeRange),
+        fetchRepairTimeData(apiTimeRange),
+        fetchPowerTradingRevenueData(apiTimeRange),
+        fetchPowerTradingPriceData(apiTimeRange),
+        fetchPowerTradingVolumeData(apiTimeRange),
       ])
 
       // 상태 업데이트
@@ -113,7 +123,8 @@ export default function StatisticsPage() {
 
   // 데이터 내보내기 함수
   const handleExportData = (format: string) => {
-    const exportUrl = exportStatisticsData(format, "all", timeRange)
+    const apiTimeRange = timeRangeMapping[timeRange] || timeRange
+    const exportUrl = exportStatisticsData(format, "all", apiTimeRange)
     window.open(exportUrl, "_blank")
   }
 

@@ -1,5 +1,5 @@
 import { API_BASE_URL } from "./apiConfig"
-import type { StatisticsData, ChartData, PieChartData } from "@/types/chart"
+import type { StatisticsData } from "@/types/chart"
 import {
   generateCostData,
   generateChargingVolumeData,
@@ -75,6 +75,18 @@ export interface PowerTradingVolumeData {
   }
 }
 
+// API 응답 타입 추가
+export interface ApiChartData {
+  label: string
+  value: number
+}
+
+export interface ApiStatisticsResponse {
+  barChartData: ApiChartData[]
+  lineChartData: ApiChartData[]
+  pieChartData: ApiChartData[]
+}
+
 // API 요청 함수
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`
@@ -107,6 +119,50 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   }
 }
 
+// API 응답을 내부 형식으로 변환하는 함수
+function convertApiResponseToChartData(apiResponse: ApiStatisticsResponse): StatisticsData {
+  // barChartData 변환
+  const barChartData = apiResponse.barChartData.map((item, index) => ({
+    x: index,
+    y: item.value,
+    label: item.label,
+  }))
+
+  // lineChartData 변환
+  const lineChartData = apiResponse.lineChartData.map((item, index) => ({
+    x: index,
+    y: item.value,
+    label: item.label,
+  }))
+
+  // pieChartData 변환
+  const pieChartData = apiResponse.pieChartData.map((item) => ({
+    label: item.label,
+    value: item.value,
+    color: getColorForLabel(item.label),
+  }))
+
+  return {
+    barChartData,
+    lineChartData,
+    pieChartData,
+  }
+}
+
+// 라벨에 따른 색상 지정 함수
+function getColorForLabel(label: string): string {
+  const colorMap: Record<string, string> = {
+    정상: "#4CAF50",
+    고장: "#F44336",
+    점검중: "#FFC107",
+    충전중: "#2196F3",
+    대기중: "#9C27B0",
+    오프라인: "#607D8B",
+  }
+
+  return colorMap[label] || "#9E9E9E" // 기본 색상
+}
+
 // 통계 데이터 API 함수
 export async function fetchStatisticsSummary(timeRange: string): Promise<StatisticsSummary> {
   try {
@@ -131,18 +187,10 @@ export async function fetchStatisticsSummary(timeRange: string): Promise<Statist
 
 export async function fetchCostData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
-    const data = await apiRequest<{
-      barChartData?: ChartData[]
-      lineChartData?: ChartData[]
-      pieChartData?: PieChartData[]
-    }>(`/statistics/cost?chartType=${chartType}&timeRange=${timeRange}`)
-
-    // API 응답에서 필요한 데이터만 추출
-    return {
-      barChartData: data.barChartData || [],
-      lineChartData: data.lineChartData || [],
-      pieChartData: data.pieChartData || [],
-    }
+    const apiResponse = await apiRequest<ApiStatisticsResponse>(
+      `/statistics/cost?chartType=${chartType}&timeRange=${timeRange}`,
+    )
+    return convertApiResponseToChartData(apiResponse)
   } catch (error) {
     console.error("비용 데이터 가져오기 실패:", error)
     // 목데이터 반환
@@ -152,17 +200,10 @@ export async function fetchCostData(chartType: string, timeRange: string): Promi
 
 export async function fetchChargingVolumeData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
-    const data = await apiRequest<{
-      barChartData?: ChartData[]
-      lineChartData?: ChartData[]
-      pieChartData?: PieChartData[]
-    }>(`/statistics/charging-volume?chartType=${chartType}&timeRange=${timeRange}`)
-
-    return {
-      barChartData: data.barChartData || [],
-      lineChartData: data.lineChartData || [],
-      pieChartData: data.pieChartData || [],
-    }
+    const apiResponse = await apiRequest<ApiStatisticsResponse>(
+      `/statistics/charging-volume?chartType=${chartType}&timeRange=${timeRange}`,
+    )
+    return convertApiResponseToChartData(apiResponse)
   } catch (error) {
     console.error("충전량 데이터 가져오기 실패:", error)
     return generateChargingVolumeData()
@@ -171,17 +212,10 @@ export async function fetchChargingVolumeData(chartType: string, timeRange: stri
 
 export async function fetchChargingInfoData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
-    const data = await apiRequest<{
-      barChartData?: ChartData[]
-      lineChartData?: ChartData[]
-      pieChartData?: PieChartData[]
-    }>(`/statistics/charging-info?chartType=${chartType}&timeRange=${timeRange}`)
-
-    return {
-      barChartData: data.barChartData || [],
-      lineChartData: data.lineChartData || [],
-      pieChartData: data.pieChartData || [],
-    }
+    const apiResponse = await apiRequest<ApiStatisticsResponse>(
+      `/statistics/charging-info?chartType=${chartType}&timeRange=${timeRange}`,
+    )
+    return convertApiResponseToChartData(apiResponse)
   } catch (error) {
     console.error("충전 정보 데이터 가져오기 실패:", error)
     return generateChargingInfoData()
@@ -190,17 +224,10 @@ export async function fetchChargingInfoData(chartType: string, timeRange: string
 
 export async function fetchChargerStatusData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
-    const data = await apiRequest<{
-      barChartData?: ChartData[]
-      lineChartData?: ChartData[]
-      pieChartData?: PieChartData[]
-    }>(`/statistics/charger-status?chartType=${chartType}&timeRange=${timeRange}`)
-
-    return {
-      barChartData: data.barChartData || [],
-      lineChartData: data.lineChartData || [],
-      pieChartData: data.pieChartData || [],
-    }
+    const apiResponse = await apiRequest<ApiStatisticsResponse>(
+      `/statistics/charger-status?chartType=${chartType}&timeRange=${timeRange}`,
+    )
+    return convertApiResponseToChartData(apiResponse)
   } catch (error) {
     console.error("충전기 상태 데이터 가져오기 실패:", error)
     return generateChargerStatusData()
@@ -209,17 +236,10 @@ export async function fetchChargerStatusData(chartType: string, timeRange: strin
 
 export async function fetchPowerTradingData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
-    const data = await apiRequest<{
-      barChartData?: ChartData[]
-      lineChartData?: ChartData[]
-      pieChartData?: PieChartData[]
-    }>(`/statistics/power-trading?chartType=${chartType}&timeRange=${timeRange}`)
-
-    return {
-      barChartData: data.barChartData || [],
-      lineChartData: data.lineChartData || [],
-      pieChartData: data.pieChartData || [],
-    }
+    const apiResponse = await apiRequest<ApiStatisticsResponse>(
+      `/statistics/power-trading?chartType=${chartType}&timeRange=${timeRange}`,
+    )
+    return convertApiResponseToChartData(apiResponse)
   } catch (error) {
     console.error("전력 거래 데이터 가져오기 실패:", error)
     return generatePowerTradingData()

@@ -1,120 +1,117 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { Chart, type ChartConfiguration, registerables, type TooltipItem } from "chart.js"
 import type { ChartData } from "@/types/chart"
+
+Chart.register(...registerables)
 
 interface LineChartProps {
   data: ChartData[]
-  color: string
-  className?: string
+  color?: string
 }
 
-export function LineChart({ data, color, className = "" }: LineChartProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+export function LineChart({ data, color = "#2196F3" }: LineChartProps) {
+  const chartRef = useRef<HTMLCanvasElement>(null)
+  const chartInstance = useRef<Chart | null>(null)
 
   useEffect(() => {
-    console.log("LineChart: 차트 렌더링 시작", data)
-    const canvas = canvasRef.current
-    if (!canvas) {
-      console.warn("LineChart: 캔버스 요소를 찾을 수 없습니다.")
-      return
+    if (!chartRef.current || !data || data.length === 0) return
+
+    const ctx = chartRef.current.getContext("2d")
+    if (!ctx) return
+
+    // 기존 차트 인스턴스가 있으면 파괴
+    if (chartInstance.current) {
+      chartInstance.current.destroy()
     }
 
-    const ctx = canvas.getContext("2d")
-    if (!ctx) {
-      console.warn("LineChart: 캔버스 컨텍스트를 가져올 수 없습니다.")
-      return
+    // 데이터 준비
+    const labels = data.map((item) => item.label || `항목 ${item.x + 1}`)
+    const values = data.map((item) => item.y)
+
+    // 차트 설정
+    const config: ChartConfiguration = {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "값",
+            data: values,
+            borderColor: color,
+            backgroundColor: `${color}33`, // 33은 20% 투명도
+            borderWidth: 2,
+            pointBackgroundColor: color,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            fill: true,
+            tension: 0.4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            enabled: true,
+            mode: "index",
+            intersect: false,
+            callbacks: {
+              label: (context: TooltipItem<"line">) => `${context.dataset.label}: ${context.parsed.y.toLocaleString()}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false,
+            },
+            ticks: {
+              color: "#888",
+            },
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: "rgba(200, 200, 200, 0.1)",
+            },
+            ticks: {
+              color: "#888",
+              callback: (value: number | string, index: number, ticks: unknown[]) => {
+                if (typeof value === "number") {
+                  return value.toLocaleString()
+                }
+                return value
+              },
+            },
+          },
+        },
+      },
     }
 
-    if (!data || data.length === 0) {
-      console.warn("LineChart: 데이터가 비어 있습니다.")
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = "#666"
-      ctx.font = "14px sans-serif"
-      ctx.textAlign = "center"
-      ctx.fillText("데이터가 없습니다.", canvas.width / 2, canvas.height / 2)
-      return
-    }
+    // 차트 생성
+    chartInstance.current = new Chart(ctx, config)
 
-    // Set canvas dimensions
-    const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
-    ctx.scale(dpr, dpr)
-
-    // Clear canvas
-    ctx.clearRect(0, 0, rect.width, rect.height)
-
-    // Draw chart
-    const padding = 20
-    const chartWidth = rect.width - padding * 2
-    const chartHeight = rect.height - padding * 2
-
-    // Find min and max values
-    const maxY = Math.max(...data.map((d) => d.y)) * 1.1 || 10 // 기본값 설정
-    const minY = 0
-
-    console.log("LineChart: 차트 범위 - 최소:", minY, "최대:", maxY)
-
-    // Draw x and y axis
-    ctx.strokeStyle = "#333"
-    ctx.lineWidth = 1
-
-    // Draw x-axis labels
-    ctx.fillStyle = "#666"
-    ctx.font = "10px sans-serif"
-    ctx.textAlign = "center"
-
-    for (let i = 0; i < 24; i += 3) {
-      const x = padding + (i / 23) * chartWidth
-      ctx.fillText(i.toString(), x, rect.height - 5)
-    }
-
-    // Draw y-axis labels
-    ctx.textAlign = "right"
-    for (let i = 0; i <= 5; i++) {
-      const y = rect.height - padding - (i / 5) * chartHeight
-      const value = Math.round((i / 5) * maxY)
-      ctx.fillText(value.toString(), padding - 5, y + 3)
-    }
-
-    // Draw line
-    ctx.beginPath()
-    ctx.strokeStyle = color
-    ctx.lineWidth = 2
-
-    data.forEach((point, i) => {
-      const x = padding + (point.x / 23) * chartWidth
-      const y = rect.height - padding - ((point.y - minY) / (maxY - minY || 1)) * chartHeight
-
-      if (i === 0) {
-        ctx.moveTo(x, y)
-      } else {
-        ctx.lineTo(x, y)
+    // 컴포넌트 언마운트 시 차트 정리
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy()
       }
-    })
-
-    ctx.stroke()
-
-    // Draw points
-    data.forEach((point) => {
-      const x = padding + (point.x / 23) * chartWidth
-      const y = rect.height - padding - ((point.y - minY) / (maxY - minY || 1)) * chartHeight
-
-      if (point.y > 0) {
-        ctx.beginPath()
-        ctx.arc(x, y, 4, 0, Math.PI * 2)
-        ctx.fillStyle = color
-        ctx.fill()
-        ctx.strokeStyle = "#fff"
-        ctx.lineWidth = 1
-        ctx.stroke()
-      }
-    })
-
-    console.log("LineChart: 차트 렌더링 완료")
+    }
   }, [data, color])
 
-  return <canvas ref={canvasRef} className={`w-full h-full ${className}`} />
+  return (
+    <div className="w-full h-full">
+      {data && data.length > 0 ? (
+        <canvas ref={chartRef} />
+      ) : (
+        <div className="flex items-center justify-center h-full text-gray-400">데이터가 없습니다</div>
+      )}
+    </div>
+  )
 }

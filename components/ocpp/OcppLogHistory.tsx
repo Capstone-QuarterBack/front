@@ -3,14 +3,13 @@
 import { useState, useEffect } from "react"
 import { OcppLogFilter } from "./OcppLogFilter"
 import { OcppLogTable } from "./OcppLogTable"
-import { fetchOcppLogs, type OcppMessage } from "@/services/ocppLogApi"
+import { fetchOcppLogs, type OcppMessage, generateSummary } from "@/services/ocppLogApi"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
 export default function OcppLogHistory() {
-  // OcppMessage[] 타입을 명시적으로 지정
   const [logs, setLogs] = useState<OcppMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,14 +20,12 @@ export default function OcppLogHistory() {
     totalPages: 0,
   })
 
-  // 필터 상태의 타입을 string | undefined로 수정
   const [filters, setFilters] = useState({
     startDate: undefined as string | undefined,
     endDate: undefined as string | undefined,
-    messageType: undefined as string | undefined,
-    direction: undefined as "incoming" | "outgoing" | undefined,
+    action: undefined as string | undefined,
+    messageType: undefined as number | undefined,
     stationId: undefined as string | undefined,
-    chargerId: undefined as string | undefined,
   })
 
   const fetchLogs = async () => {
@@ -39,20 +36,25 @@ export default function OcppLogHistory() {
       const response = await fetchOcppLogs(
         filters.startDate,
         filters.endDate,
+        filters.action,
         filters.messageType,
-        filters.direction,
         filters.stationId,
-        filters.chargerId,
         pagination.page,
         pagination.size,
       )
 
-      setLogs(response.data.content)
+      // 각 로그에 summary 속성 추가
+      const logsWithSummary = response.content.map((log) => ({
+        ...log,
+        summary: generateSummary(log),
+      }))
+
+      setLogs(logsWithSummary)
       setPagination({
-        page: response.data.page,
-        size: response.data.size,
-        totalElements: response.data.totalElements,
-        totalPages: response.data.totalPages,
+        page: response.currentPage,
+        size: pagination.size,
+        totalElements: response.totalElements,
+        totalPages: response.totalPages,
       })
     } catch (err) {
       setError("로그를 불러오는 중 오류가 발생했습니다.")
@@ -73,20 +75,18 @@ export default function OcppLogHistory() {
   const handleFilter = (
     startDate: string | undefined,
     endDate: string | undefined,
-    messageType: string | undefined,
-    direction: "incoming" | "outgoing" | undefined,
+    action: string | undefined,
+    messageType: number | undefined,
     stationId: string | undefined,
-    chargerId: string | undefined,
   ) => {
     // 필터가 변경되면 페이지를 0으로 리셋
     setPagination((prev) => ({ ...prev, page: 0 }))
     setFilters({
       startDate,
       endDate,
+      action,
       messageType,
-      direction,
       stationId,
-      chargerId,
     })
   }
 
