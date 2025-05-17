@@ -1,0 +1,78 @@
+import type { MockDataType } from "@/types/station"
+
+export const mockData: MockDataType = {
+  batteryPercentage: 75.28,
+  totalUsage: 5825,
+  totalPower: 215,
+  totalRevenue: 123456,
+  chargers: [
+    { id: "01", status: "ACTIVE", statusText: "사용가능" },
+    { id: "02", status: "INACTIVE", statusText: "사용중" },
+    { id: "03", status: "INACTIVE", statusText: "사용중" },
+    { id: "04", status: "INACTIVE", statusText: "사용중" },
+  ],
+  usageHistory: Array(6).fill({
+    startTime: "2025/04/19 12:24:22",
+    endTime: "2025/04/19 12:54:20",
+    usageKwh: 30.201,
+    maxPower: 10400,
+    userType: "개인 일반",
+    cardNumber: "ASGM-828910",
+    carId: "00",
+  }),
+  chargingHistory: [
+    {
+      date: "2025/02/19",
+      time: "08:12:32",
+      power: "735.102(KWh)",
+      price: "365.7(KRW)",
+      transactionId: "CSG-28975-CH",
+    },
+    {
+      date: "2025/02/19",
+      time: "08:12:32",
+      power: "735.102(KWh)",
+      price: "365.7(KRW)",
+      transactionId: "CSG-28975-CH",
+    },
+    {
+      date: "2025/02/19",
+      time: "08:12:32",
+      power: "735.102(KWh)",
+      price: "365.7(KRW)",
+      transactionId: "CSG-28975-CH",
+    },
+    {
+      date: "2025/02/19",
+      time: "08:12:32",
+      power: "735.102(KWh)",
+      price: "365.7(KRW)",
+      transactionId: "CSG-28975-CH",
+    },
+    {
+      date: "2025/02/19",
+      time: "08:12:32",
+      power: "735.102(KWh)",
+      price: "365.7(KRW)",
+      transactionId: "CSG-28975-CH",
+    },
+  ],
+  priceHistory: [
+    { date: "2025/03/20", time: "00:11:00", price: "13,911,122", change: "+68.29" },
+    { date: "2025/03/21", time: "00:10:00", price: "13,700,000", change: "-200,000" },
+    { date: "2025/03/22", time: "00:09:00", price: "13,900,000", change: "+100,000" },
+    { date: "2025/03/23", time: "00:08:00", price: "13,800,000", change: "+100,100" },
+    { date: "2025/03/24", time: "00:07:00", price: "13,700,000", change: "+200,000" },
+  ],
+  stationDetails: {
+    chargeTime: "03/19 11:11:11",
+    totalPower: "30.201(kWh)",
+    chargeEndTime: "03/19 11:11:41",
+    maxPower: "9,999(KW)",
+    cardNumber: "9,999(KRW)",
+    occupancyRate: "56.03%",
+    carId: "00",
+    transactionId: "TC130295",
+    totalRevenue: "10,255(KWh)",
+  },
+}
