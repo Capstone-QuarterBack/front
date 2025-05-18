@@ -22,7 +22,7 @@ export class OcppWebSocketService {
 
   constructor(url?: string) {
     // Use the provided URL or the fixed localhost URL
-    this.url = url || "ws://localhost:8080/react"
+    this.url = url || "ws://13.209.119.253:8080/react"
   }
 
   // WebSocket 연결
