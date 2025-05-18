@@ -1,19 +1,19 @@
-"use client";
+"use client"
 
-import { useRef, useState } from "react";
-import { useFrame } from "@react-three/fiber";
-import { Text, useTexture } from "@react-three/drei";
-import type { Group, MeshStandardMaterial } from "three";
-import type { Charger } from "./StationVisualization";
+import { useRef, useState } from "react"
+import { useFrame } from "@react-three/fiber"
+import { Text, useTexture } from "@react-three/drei"
+import type { Group, MeshStandardMaterial } from "three"
+import type { Charger } from "./StationVisualization"
 
 interface ChargingStationProps {
-  position: [number, number, number];
-  status: "active" | "disabled" | "maintenance";
-  chargers: Charger[];
-  onClick: () => void;
-  onChargerClick: (charger: Charger) => void;
-  isSelected: boolean;
-  selectedChargerId?: string | null;
+  position: [number, number, number]
+  status: "active" | "disabled" | "maintenance"
+  chargers: Charger[]
+  onClick: () => void
+  onChargerClick: (charger: Charger) => void
+  isSelected: boolean
+  selectedChargerId?: string | null
 }
 
 export function ChargingStation({
@@ -25,67 +25,82 @@ export function ChargingStation({
   isSelected,
   selectedChargerId,
 }: ChargingStationProps) {
-  const groupRef = useRef<Group>(null);
-  const baseMaterialRef = useRef<MeshStandardMaterial>(null);
-  const roofMaterialRef = useRef<MeshStandardMaterial>(null);
-  const [hovered, setHovered] = useState(false);
+  const groupRef = useRef<Group>(null)
+  const baseMaterialRef = useRef<MeshStandardMaterial>(null)
+  const roofMaterialRef = useRef<MeshStandardMaterial>(null)
+  const [hovered, setHovered] = useState(false)
 
   // 세종대학교 로고 텍스처 로드
-  const logoTexture = useTexture("/images/sejong-university-logo.png");
+  const logoTexture = useTexture("/images/sejong-university-logo.png")
 
   // 상태에 따른 색상 설정
   const getStatusColor = () => {
     switch (status) {
       case "active":
-        return "#4CAF50"; // 녹색
+        return "#4CAF50" // 녹색
       case "disabled":
-        return "#F44336"; // 빨간색
+        return "#F44336" // 빨간색
       case "maintenance":
-        return "#FFC107"; // 노란색
+        return "#FFC107" // 노란색
       default:
-        return "#4CAF50";
+        return "#4CAF50"
     }
-  };
+  }
 
   // 충전기 상태에 따른 색상 설정
   const getChargerStatusColor = (chargerStatus: string) => {
     switch (chargerStatus) {
       case "available":
-        return "#4CAF50"; // 녹색
+        return "#4CAF50" // 녹색 - 이용가능
       case "charging":
-        return "#2196F3"; // 파란색
+        return "#2196F3" // 파란색 - 이용중
       case "disabled":
-        return "#F44336"; // 빨간색
+        return "#F44336" // 빨간색 - 사용불가
       case "maintenance":
-        return "#FFC107"; // 노란색
+        return "#FFC107" // 노란색 - 점검중
       default:
-        return "#9E9E9E"; // 회색
+        return "#9E9E9E" // 회색
     }
-  };
+  }
+
+  // 충전기 상태에 따른 텍스트 설정
+  const getChargerStatusText = (chargerStatus: string) => {
+    switch (chargerStatus) {
+      case "available":
+        return "이용가능"
+      case "charging":
+        return "이용중"
+      case "disabled":
+        return "사용불가"
+      case "maintenance":
+        return "점검중"
+      default:
+        return "상태미상"
+    }
+  }
 
   // 애니메이션 및 상호작용 효과
   useFrame((state, delta) => {
-    if (!groupRef.current) return;
+    if (!groupRef.current) return
 
     // 선택되었을 때 약간 위로 올라가는 효과
     if (isSelected) {
-      groupRef.current.position.y =
-        position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.05 + 0.1;
+      groupRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.05 + 0.1
     } else {
-      groupRef.current.position.y = position[1];
+      groupRef.current.position.y = position[1]
     }
 
     // 호버 효과
     if (baseMaterialRef.current && roofMaterialRef.current) {
       if (hovered || isSelected) {
-        baseMaterialRef.current.emissiveIntensity = 0.3;
-        roofMaterialRef.current.emissiveIntensity = 0.3;
+        baseMaterialRef.current.emissiveIntensity = 0.3
+        roofMaterialRef.current.emissiveIntensity = 0.3
       } else {
-        baseMaterialRef.current.emissiveIntensity = 0;
-        roofMaterialRef.current.emissiveIntensity = 0;
+        baseMaterialRef.current.emissiveIntensity = 0
+        roofMaterialRef.current.emissiveIntensity = 0
       }
     }
-  });
+  })
 
   return (
     <group
@@ -139,8 +154,8 @@ export function ChargingStation({
           key={charger.id}
           position={charger.position}
           onClick={(e) => {
-            e.stopPropagation();
-            onChargerClick(charger);
+            e.stopPropagation()
+            onChargerClick(charger)
           }}
         >
           {/* 충전기 기둥 */}
@@ -158,11 +173,7 @@ export function ChargingStation({
           {/* 충전기 헤드 */}
           <mesh castShadow position={[0, 0.6, 0]}>
             <boxGeometry args={[0.2, 0.2, 0.2]} />
-            <meshStandardMaterial
-              color="#424242"
-              metalness={0.5}
-              roughness={0.5}
-            />
+            <meshStandardMaterial color="#424242" metalness={0.5} roughness={0.5} />
           </mesh>
 
           {/* 충전기 선택 표시기 */}
@@ -185,6 +196,19 @@ export function ChargingStation({
           >
             {charger.name}
           </Text>
+
+          {/* 충전기 상태 텍스트 */}
+          <Text
+            position={[0, 0.95, 0]}
+            fontSize={0.08}
+            color={getChargerStatusColor(charger.status)}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.01}
+            outlineColor="#000000"
+          >
+            {getChargerStatusText(charger.status)}
+          </Text>
         </group>
       ))}
 
@@ -198,11 +222,7 @@ export function ChargingStation({
         outlineWidth={0.02}
         outlineColor="#000000"
       >
-        {status === "active"
-          ? "세종대학교 충전소"
-          : status === "disabled"
-          ? "충전 금지"
-          : "점검 중"}
+        {status === "active" ? "세종대학교 충전소" : status === "disabled" ? "충전 금지" : "점검 중"}
       </Text>
 
       {/* 상태 표시기 */}
@@ -219,5 +239,5 @@ export function ChargingStation({
         </mesh>
       )}
     </group>
-  );
+  )
 }

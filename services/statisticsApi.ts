@@ -125,14 +125,14 @@ function convertApiResponseToChartData(apiResponse: ApiStatisticsResponse): Stat
   const barChartData = apiResponse.barChartData.map((item, index) => ({
     x: index,
     y: item.value,
-    label: item.label,
+    label: item.label, // 원래 날짜 라벨 유지
   }))
 
   // lineChartData 변환
   const lineChartData = apiResponse.lineChartData.map((item, index) => ({
     x: index,
     y: item.value,
-    label: item.label,
+    label: item.label, // 원래 날짜 라벨 유지
   }))
 
   // pieChartData 변환

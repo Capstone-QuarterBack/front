@@ -43,7 +43,7 @@ export function BarChart({ data, color = "#4CAF50" }: BarChartProps) {
             borderColor: color,
             borderWidth: 1,
             borderRadius: 4,
-            barThickness: 30,
+            barThickness: data.length > 20 ? "flex" : 30, // 데이터가 많으면 자동 조정
           },
         ],
       },
@@ -70,6 +70,10 @@ export function BarChart({ data, color = "#4CAF50" }: BarChartProps) {
             },
             ticks: {
               color: "#888",
+              maxRotation: 45, // 라벨이 많을 때 회전
+              minRotation: 0,
+              autoSkip: true, // 라벨이 많을 때 자동으로 일부 건너뛰기
+              autoSkipPadding: 10,
             },
           },
           y: {

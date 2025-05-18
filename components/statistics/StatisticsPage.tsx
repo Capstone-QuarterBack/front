@@ -33,6 +33,7 @@ import {
   type PowerTradingPriceData,
   type PowerTradingVolumeData,
 } from "@/services/statisticsApi"
+import { aggregateStatisticsData } from "@/lib/utils/chart-utils"
 
 export default function StatisticsPage() {
   // 상태 관리
@@ -54,6 +55,13 @@ export default function StatisticsPage() {
   const [tradingRevenueData, setTradingRevenueData] = useState<PowerTradingRevenueData | null>(null)
   const [tradingPriceData, setTradingPriceData] = useState<PowerTradingPriceData | null>(null)
   const [tradingVolumeData, setTradingVolumeData] = useState<PowerTradingVolumeData | null>(null)
+
+  // 집계된 데이터 상태
+  const [aggregatedCostData, setAggregatedCostData] = useState<StatisticsData | null>(null)
+  const [aggregatedVolumeData, setAggregatedVolumeData] = useState<StatisticsData | null>(null)
+  const [aggregatedInfoData, setAggregatedInfoData] = useState<StatisticsData | null>(null)
+  const [aggregatedStatusData, setAggregatedStatusData] = useState<StatisticsData | null>(null)
+  const [aggregatedTradingData, setAggregatedTradingData] = useState<StatisticsData | null>(null)
 
   // 시간 범위 매핑
   const timeRangeMapping: Record<string, string> = {
@@ -113,6 +121,13 @@ export default function StatisticsPage() {
       setTradingRevenueData(tradingRevenueResult)
       setTradingPriceData(tradingPriceResult)
       setTradingVolumeData(tradingVolumeResult)
+
+      // 데이터 집계
+      setAggregatedCostData(aggregateStatisticsData(costResult, timeRange as "day" | "week" | "month" | "year"))
+      setAggregatedVolumeData(aggregateStatisticsData(volumeResult, timeRange as "day" | "week" | "month" | "year"))
+      setAggregatedInfoData(aggregateStatisticsData(infoResult, timeRange as "day" | "week" | "month" | "year"))
+      setAggregatedStatusData(aggregateStatisticsData(statusResult, timeRange as "day" | "week" | "month" | "year"))
+      setAggregatedTradingData(aggregateStatisticsData(tradingResult, timeRange as "day" | "week" | "month" | "year"))
     } catch (err) {
       setError("데이터를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.")
       console.error("데이터 로딩 오류:", err)
@@ -226,57 +241,102 @@ export default function StatisticsPage() {
         {/* 막대 그래프 섹션 */}
         <TabsContent value="bar" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {costData && (
+            {aggregatedCostData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>월별 충전 비용</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    충전 비용
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <BarChart data={costData.barChartData} color="#4CAF50" />
+                  <BarChart data={aggregatedCostData.barChartData} color="#4CAF50" />
                 </CardContent>
               </Card>
             )}
 
-            {volumeData && (
+            {aggregatedVolumeData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>월별 충전량 (kWh)</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    충전량 (kWh)
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <BarChart data={volumeData.barChartData} color="#2196F3" />
+                  <BarChart data={aggregatedVolumeData.barChartData} color="#2196F3" />
                 </CardContent>
               </Card>
             )}
 
-            {infoData && (
+            {aggregatedInfoData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>요일별 충전 횟수</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    충전 횟수
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <BarChart data={infoData.barChartData} color="#FFC107" />
+                  <BarChart data={aggregatedInfoData.barChartData} color="#FFC107" />
                 </CardContent>
               </Card>
             )}
 
-            {statusData && (
+            {aggregatedStatusData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>충전기별 고장 횟수</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    충전기별 고장 횟수
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <BarChart data={statusData.barChartData} color="#F44336" />
+                  <BarChart data={aggregatedStatusData.barChartData} color="#F44336" />
                 </CardContent>
               </Card>
             )}
 
-            {tradingData && (
+            {aggregatedTradingData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>월별 전력 거래량</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    전력 거래량
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <BarChart data={tradingData.barChartData} color="#9C27B0" />
+                  <BarChart data={aggregatedTradingData.barChartData} color="#9C27B0" />
                 </CardContent>
               </Card>
             )}
@@ -286,57 +346,57 @@ export default function StatisticsPage() {
         {/* 원형 그래프 섹션 */}
         <TabsContent value="pie" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {costData && (
+            {aggregatedCostData && (
               <Card>
                 <CardHeader>
                   <CardTitle>충전소별 비용 분포</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <PieChart data={costData.pieChartData} />
+                  <PieChart data={aggregatedCostData.pieChartData} />
                 </CardContent>
               </Card>
             )}
 
-            {volumeData && (
+            {aggregatedVolumeData && (
               <Card>
                 <CardHeader>
                   <CardTitle>시간대별 충전량</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <PieChart data={volumeData.pieChartData} />
+                  <PieChart data={aggregatedVolumeData.pieChartData} />
                 </CardContent>
               </Card>
             )}
 
-            {infoData && (
+            {aggregatedInfoData && (
               <Card>
                 <CardHeader>
                   <CardTitle>충전 결과 상태</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <PieChart data={infoData.pieChartData} />
+                  <PieChart data={aggregatedInfoData.pieChartData} />
                 </CardContent>
               </Card>
             )}
 
-            {statusData && (
+            {aggregatedStatusData && (
               <Card>
                 <CardHeader>
                   <CardTitle>충전기 상태 분포</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <PieChart data={statusData.pieChartData} />
+                  <PieChart data={aggregatedStatusData.pieChartData} />
                 </CardContent>
               </Card>
             )}
 
-            {tradingData && (
+            {aggregatedTradingData && (
               <Card>
                 <CardHeader>
                   <CardTitle>전력 거래 유형</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <PieChart data={tradingData.pieChartData} />
+                  <PieChart data={aggregatedTradingData.pieChartData} />
                 </CardContent>
               </Card>
             )}
@@ -346,57 +406,57 @@ export default function StatisticsPage() {
         {/* 선 그래프 섹션 */}
         <TabsContent value="line" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {costData && (
+            {aggregatedCostData && (
               <Card>
                 <CardHeader>
                   <CardTitle>일별 비용 추이</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={costData.lineChartData} color="#4CAF50" />
+                  <LineChart data={aggregatedCostData.lineChartData} color="#4CAF50" />
                 </CardContent>
               </Card>
             )}
 
-            {volumeData && (
+            {aggregatedVolumeData && (
               <Card>
                 <CardHeader>
                   <CardTitle>시간별 충전량 (kWh)</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={volumeData.lineChartData} color="#2196F3" />
+                  <LineChart data={aggregatedVolumeData.lineChartData} color="#2196F3" />
                 </CardContent>
               </Card>
             )}
 
-            {infoData && (
+            {aggregatedInfoData && (
               <Card>
                 <CardHeader>
                   <CardTitle>시간별 충전 횟수</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={infoData.lineChartData} color="#FFC107" />
+                  <LineChart data={aggregatedInfoData.lineChartData} color="#FFC107" />
                 </CardContent>
               </Card>
             )}
 
-            {statusData && (
+            {aggregatedStatusData && (
               <Card>
                 <CardHeader>
                   <CardTitle>월별 충전기 가동률</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={statusData.lineChartData} color="#F44336" />
+                  <LineChart data={aggregatedStatusData.lineChartData} color="#F44336" />
                 </CardContent>
               </Card>
             )}
 
-            {tradingData && (
+            {aggregatedTradingData && (
               <Card>
                 <CardHeader>
                   <CardTitle>시간별 전력 거래량</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={tradingData.lineChartData} color="#9C27B0" />
+                  <LineChart data={aggregatedTradingData.lineChartData} color="#9C27B0" />
                 </CardContent>
               </Card>
             )}

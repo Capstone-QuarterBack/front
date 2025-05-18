@@ -7,32 +7,32 @@
  */
 export function toDate(value: unknown): Date | null {
   if (value === null || value === undefined) {
-    return null
+    return null;
   }
 
   if (value instanceof Date) {
-    return isNaN(value.getTime()) ? null : value
+    return isNaN(value.getTime()) ? null : value;
   }
 
   if (typeof value === "string") {
     try {
-      const date = new Date(value)
-      return isNaN(date.getTime()) ? null : date
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? null : date;
     } catch (e) {
-      return null
+      return null;
     }
   }
 
   if (typeof value === "number") {
     try {
-      const date = new Date(value)
-      return isNaN(date.getTime()) ? null : date
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? null : date;
     } catch (e) {
-      return null
+      return null;
     }
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -42,34 +42,38 @@ export function toDate(value: unknown): Date | null {
  * @param fallback 변환 실패 시 반환할 값 (기본값: '')
  * @returns 포맷팅된 날짜 문자열
  */
-export function formatDate(value: unknown, format = "yyyy/MM/dd HH:mm:ss", fallback = ""): string {
-  const date = toDate(value)
+export function formatDate(
+  value: unknown,
+  format = "yyyy/MM/dd HH:mm:ss",
+  fallback = ""
+): string {
+  const date = toDate(value);
   if (!date) {
-    return typeof value === "string" ? value : fallback
+    return typeof value === "string" ? value : fallback;
   }
 
   try {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, "0")
-    const day = String(date.getDate()).padStart(2, "0")
-    const hours = String(date.getHours()).padStart(2, "0")
-    const minutes = String(date.getMinutes()).padStart(2, "0")
-    const seconds = String(date.getSeconds()).padStart(2, "0")
-    const milliseconds = String(date.getMilliseconds()).padStart(3, "0")
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    const milliseconds = String(date.getMilliseconds()).padStart(3, "0");
 
-    let result = format
-    result = result.replace(/yyyy/g, year.toString())
-    result = result.replace(/MM/g, month)
-    result = result.replace(/dd/g, day)
-    result = result.replace(/HH/g, hours)
-    result = result.replace(/mm/g, minutes)
-    result = result.replace(/ss/g, seconds)
-    result = result.replace(/SSS/g, milliseconds)
+    let result = format;
+    result = result.replace(/yyyy/g, year.toString());
+    result = result.replace(/MM/g, month);
+    result = result.replace(/dd/g, day);
+    result = result.replace(/HH/g, hours);
+    result = result.replace(/mm/g, minutes);
+    result = result.replace(/ss/g, seconds);
+    result = result.replace(/SSS/g, milliseconds);
 
-    return result
+    return result;
   } catch (error) {
-    console.error("날짜 형식 변환 오류:", error)
-    return typeof value === "string" ? value : fallback
+    console.error("날짜 형식 변환 오류:", error);
+    return typeof value === "string" ? value : fallback;
   }
 }
 
@@ -79,9 +83,12 @@ export function formatDate(value: unknown, format = "yyyy/MM/dd HH:mm:ss", fallb
  * @param format 날짜 포맷 (기본값: "yyyy/MM/dd HH:mm")
  * @returns 사용자 친화적인 날짜 문자열 (예: "2025/05/04 18:28")
  */
-export function formatISODate(isoString: string | null | undefined, format = "yyyy/MM/dd HH:mm"): string {
-  if (!isoString) return ""
-  return formatDate(isoString, format)
+export function formatISODate(
+  isoString: string | null | undefined,
+  format = "yyyy/MM/dd HH:mm"
+): string {
+  if (!isoString) return "";
+  return formatDate(isoString, format);
 }
 
 /**
@@ -90,9 +97,12 @@ export function formatISODate(isoString: string | null | undefined, format = "yy
  * @param format 포맷 문자열 (기본값: "HH:mm:ss.SSS")
  * @returns 포맷팅된 타임스탬프 문자열
  */
-export function formatTimestamp(timestamp: string | number | null | undefined, format = "HH:mm:ss.SSS"): string {
-  if (timestamp === null || timestamp === undefined) return ""
-  return formatDate(timestamp, format)
+export function formatTimestamp(
+  timestamp: string | number | null | undefined,
+  format = "HH:mm:ss.SSS"
+): string {
+  if (timestamp === null || timestamp === undefined) return "";
+  return formatDate(timestamp, format);
 }
 
 /**
@@ -101,33 +111,33 @@ export function formatTimestamp(timestamp: string | number | null | undefined, f
  * @returns 상대적인 시간 문자열
  */
 export function getRelativeTime(value: unknown): string {
-  const date = toDate(value)
+  const date = toDate(value);
   if (!date) {
-    return typeof value === "string" ? value : ""
+    return typeof value === "string" ? value : "";
   }
 
   try {
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
 
     // 시간 차이 계산
-    const diffSec = Math.floor(diffMs / 1000)
-    const diffMin = Math.floor(diffSec / 60)
-    const diffHour = Math.floor(diffMin / 60)
-    const diffDay = Math.floor(diffHour / 24)
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
 
     // 상대적인 시간 반환
     if (diffDay > 0) {
-      return `${diffDay}일 전`
+      return `${diffDay}일 전`;
     } else if (diffHour > 0) {
-      return `${diffHour}시간 전`
+      return `${diffHour}시간 전`;
     } else if (diffMin > 0) {
-      return `${diffMin}분 전`
+      return `${diffMin}분 전`;
     } else {
-      return "방금 전"
+      return "방금 전";
     }
   } catch (error) {
-    console.error("상대적 시간 계산 오류:", error)
-    return typeof value === "string" ? value : ""
+    console.error("상대적 시간 계산 오류:", error);
+    return typeof value === "string" ? value : "";
   }
 }
