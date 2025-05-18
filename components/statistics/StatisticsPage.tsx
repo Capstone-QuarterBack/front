@@ -9,7 +9,7 @@ import { LineChart } from "@/components/charts/LineChart"
 import { PieChart } from "@/components/charts/PieChart"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Download } from "lucide-react"
+import { AlertCircle, Download } from 'lucide-react'
 import type { StatisticsData } from "@/types/chart"
 import {
   fetchStatisticsSummary,
@@ -371,7 +371,7 @@ export default function StatisticsPage() {
             {aggregatedInfoData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>충전 결과 상태</CardTitle>
+                  <CardTitle>충전 결과 분포</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
                   <PieChart data={aggregatedInfoData.pieChartData} />
@@ -431,7 +431,7 @@ export default function StatisticsPage() {
             {aggregatedInfoData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>시간별 충전 횟수</CardTitle>
+                  <CardTitle>시간대별 충전 횟수</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
                   <LineChart data={aggregatedInfoData.lineChartData} color="#FFC107" />

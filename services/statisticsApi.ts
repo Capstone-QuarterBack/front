@@ -75,7 +75,7 @@ export interface PowerTradingVolumeData {
   }
 }
 
-// API 응답 타입 추가
+// API 응답 타입
 export interface ApiChartData {
   label: string
   value: number
@@ -185,10 +185,25 @@ export async function fetchStatisticsSummary(timeRange: string): Promise<Statist
   }
 }
 
+// 차트 타입을 API 형식으로 변환하는 함수
+function convertChartTypeToApiFormat(chartType: string): string {
+  switch (chartType.toLowerCase()) {
+    case "bar":
+      return "BAR"
+    case "pie":
+      return "PIE"
+    case "line":
+      return "LINE"
+    default:
+      return "BAR"
+  }
+}
+
 export async function fetchCostData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
+    const apiChartType = convertChartTypeToApiFormat(chartType)
     const apiResponse = await apiRequest<ApiStatisticsResponse>(
-      `/statistics/cost?chartType=${chartType}&timeRange=${timeRange}`,
+      `/statistics/cost?chartType=${apiChartType}&timeRange=${timeRange}`,
     )
     return convertApiResponseToChartData(apiResponse)
   } catch (error) {
@@ -200,8 +215,9 @@ export async function fetchCostData(chartType: string, timeRange: string): Promi
 
 export async function fetchChargingVolumeData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
+    const apiChartType = convertChartTypeToApiFormat(chartType)
     const apiResponse = await apiRequest<ApiStatisticsResponse>(
-      `/statistics/charging-volume?chartType=${chartType}&timeRange=${timeRange}`,
+      `/statistics/charging-volume?chartType=${apiChartType}&timeRange=${timeRange}`,
     )
     return convertApiResponseToChartData(apiResponse)
   } catch (error) {
@@ -212,20 +228,22 @@ export async function fetchChargingVolumeData(chartType: string, timeRange: stri
 
 export async function fetchChargingInfoData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
+    const apiChartType = convertChartTypeToApiFormat(chartType)
     const apiResponse = await apiRequest<ApiStatisticsResponse>(
-      `/statistics/charging-info?chartType=${chartType}&timeRange=${timeRange}`,
+      `/statistics/transaction-count?chartType=${apiChartType}&timeRange=${timeRange}`,
     )
     return convertApiResponseToChartData(apiResponse)
   } catch (error) {
-    console.error("충전 정보 데이터 가져오기 실패:", error)
+    console.error("충전 횟수 데이터 가져오기 실패:", error)
     return generateChargingInfoData()
   }
 }
 
 export async function fetchChargerStatusData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
+    const apiChartType = convertChartTypeToApiFormat(chartType)
     const apiResponse = await apiRequest<ApiStatisticsResponse>(
-      `/statistics/charger-status?chartType=${chartType}&timeRange=${timeRange}`,
+      `/statistics/charger-status?chartType=${apiChartType}&timeRange=${timeRange}`,
     )
     return convertApiResponseToChartData(apiResponse)
   } catch (error) {
@@ -236,8 +254,9 @@ export async function fetchChargerStatusData(chartType: string, timeRange: strin
 
 export async function fetchPowerTradingData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
+    const apiChartType = convertChartTypeToApiFormat(chartType)
     const apiResponse = await apiRequest<ApiStatisticsResponse>(
-      `/statistics/power-trading?chartType=${chartType}&timeRange=${timeRange}`,
+      `/statistics/power-trading?chartType=${apiChartType}&timeRange=${timeRange}`,
     )
     return convertApiResponseToChartData(apiResponse)
   } catch (error) {
