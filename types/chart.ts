@@ -1,7 +1,7 @@
 export interface ChartData {
-  x: number
+  x: number | string
   y: number
-  label?: string // label을 선택적으로 변경
+  label?: string
 }
 
 export interface PieChartData {

@@ -9,9 +9,10 @@ Chart.register(...registerables)
 interface LineChartProps {
   data: ChartData[]
   color?: string
+  yAxisUnit?: string
 }
 
-export function LineChart({ data, color = "#2196F3" }: LineChartProps) {
+export function LineChart({ data, color = "#2196F3", yAxisUnit = "" }: LineChartProps) {
   const chartRef = useRef<HTMLCanvasElement>(null)
   const chartInstance = useRef<Chart | null>(null)
 
@@ -27,7 +28,12 @@ export function LineChart({ data, color = "#2196F3" }: LineChartProps) {
     }
 
     // 데이터 준비
-    const labels = data.map((item) => item.label || `항목 ${item.x + 1}`)
+    const labels = data.map((item) => {
+      // 시간 레이블 유지 (예: "9시", "10시" 등)
+      if (item.label) return item.label
+      if (typeof item.x === "number") return `${item.x}시`
+      return item.x
+    })
     const values = data.map((item) => item.y)
 
     // 차트 설정
@@ -37,7 +43,7 @@ export function LineChart({ data, color = "#2196F3" }: LineChartProps) {
         labels: labels,
         datasets: [
           {
-            label: "값",
+            label: yAxisUnit ? `값 (${yAxisUnit})` : "값",
             data: values,
             borderColor: color,
             backgroundColor: `${color}33`, // 33은 20% 투명도
@@ -62,7 +68,11 @@ export function LineChart({ data, color = "#2196F3" }: LineChartProps) {
             mode: "index",
             intersect: false,
             callbacks: {
-              label: (context: TooltipItem<"line">) => `${context.dataset.label}: ${context.parsed.y.toLocaleString()}`,
+              label: (context: TooltipItem<"line">) => {
+                const label = context.dataset.label || "값"
+                const labelText = label.includes(" ") ? label.split(" ")[0] : label
+                return `${labelText}: ${context.parsed.y.toLocaleString()}${yAxisUnit}`
+              },
             },
           },
         },
@@ -82,11 +92,19 @@ export function LineChart({ data, color = "#2196F3" }: LineChartProps) {
             },
             ticks: {
               color: "#888",
-              callback: (value: number | string, index: number, ticks: unknown[]) => {
+              callback: (value) => {
                 if (typeof value === "number") {
-                  return value.toLocaleString()
+                  return `${value.toLocaleString()}${yAxisUnit}`
                 }
                 return value
+              },
+            },
+            title: {
+              display: !!yAxisUnit,
+              text: yAxisUnit,
+              color: "#888",
+              font: {
+                size: 12,
               },
             },
           },
@@ -103,7 +121,7 @@ export function LineChart({ data, color = "#2196F3" }: LineChartProps) {
         chartInstance.current.destroy()
       }
     }
-  }, [data, color])
+  }, [data, color, yAxisUnit])
 
   return (
     <div className="w-full h-full">

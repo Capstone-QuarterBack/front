@@ -79,6 +79,7 @@ export interface PowerTradingVolumeData {
 export interface ApiChartData {
   label: string
   value: number
+  id?: string
 }
 
 export interface ApiStatisticsResponse {
@@ -160,6 +161,8 @@ function getColorForLabel(label: string): string {
     오프라인: "#607D8B",
     주간: "#FFC107",
     야간: "#3F51B5",
+    급속: "#FF5722",
+    완속: "#2196F3",
   }
 
   // If it's a station name (not in our predefined map), assign a color based on hash
@@ -427,6 +430,27 @@ export async function fetchStationPriceDistributionData(): Promise<StatisticsDat
         { label: "세종대학교", value: 7300, color: "#4CAF50" },
         { label: "광진구청", value: 1200, color: "#2196F3" },
         { label: "건국대학교", value: 800, color: "#FFC107" },
+      ],
+    }
+  }
+}
+
+// Add this new function for charging info data
+export async function fetchChargingTypeData(timeRange: string): Promise<StatisticsData> {
+  try {
+    const apiResponse = await apiRequest<ApiStatisticsResponse>(
+      `/statistics/charging-info?chartType=PIE&timeRange=${timeRange}`,
+    )
+    return convertApiResponseToChartData(apiResponse)
+  } catch (error) {
+    console.error("충전 결과 분포 데이터 가져오기 실패:", error)
+    // 목데이터 반환
+    return {
+      barChartData: [],
+      lineChartData: [],
+      pieChartData: [
+        { label: "급속", value: 50, color: "#FF5722" },
+        { label: "완속", value: 50, color: "#2196F3" },
       ],
     }
   }

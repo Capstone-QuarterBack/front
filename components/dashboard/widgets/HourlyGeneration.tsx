@@ -34,7 +34,7 @@ export function HourlyGeneration({ className = "", refreshInterval = 0 }: Hourly
 
       // API 응답 데이터를 차트 데이터 형식으로 변환
       const formattedData: ChartData[] = data.map((item: DischargeByHourData) => ({
-        x: item.hour,
+        x: `시간 ${item.hour + 1}`, // 시간을 1부터 24까지로 표시 (0 -> 시간 1, 1 -> 시간 2, ...)
         y: item.dischargeKwh / 1000, // kWh 단위로 변환 (값이 너무 크면 스케일 조정)
       }))
 

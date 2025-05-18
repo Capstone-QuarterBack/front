@@ -26,6 +26,7 @@ import {
   fetchPowerTradingVolumeData,
   fetchTimeTypeMeterValueData,
   fetchStationPriceDistributionData,
+  fetchChargingTypeData,
   exportStatisticsData,
   type StatisticsSummary,
   type ChargerUptimeData,
@@ -36,6 +37,65 @@ import {
   type PowerTradingVolumeData,
 } from "@/services/statisticsApi"
 import { aggregateStatisticsData } from "@/lib/utils/chart-utils"
+
+// filterLastSevenDays 함수를 수정하여 오늘 날짜 기준으로 최근 7일만 표시하도록 합니다
+function filterLastSevenDays(data: StatisticsData | null): StatisticsData | null {
+  if (!data || !data.barChartData || !data.lineChartData) {
+    return data
+  }
+
+  // 현재 날짜 가져오기
+  const today = new Date()
+  const sevenDaysAgo = new Date(today)
+  sevenDaysAgo.setDate(today.getDate() - 6) // 오늘 포함 7일이므로 6일 전으로 설정
+
+  // 날짜 형식 변환 함수 (MM/DD 형식으로 변환)
+  const formatDate = (date: Date): string => {
+    const month = (date.getMonth() + 1).toString().padStart(2, "0")
+    const day = date.getDate().toString().padStart(2, "0")
+    return `${month}/${day}`
+  }
+
+  // 최근 7일 날짜 배열 생성
+  const last7Days: string[] = []
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today)
+    date.setDate(today.getDate() - i)
+    last7Days.unshift(formatDate(date)) // 날짜를 오름차순으로 정렬
+  }
+
+  // 데이터에서 날짜 추출 (label이 날짜 형식이라고 가정)
+  const filteredBarData = data.barChartData.filter((item) => {
+    // label이 날짜 형식이 아니거나 없는 경우 기본적으로 포함
+    if (!item.label) return true
+
+    // 날짜 형식이면 최근 7일에 포함되는지 확인
+    return last7Days.includes(item.label)
+  })
+
+  const filteredLineData = data.lineChartData.filter((item) => {
+    if (!item.label) return true
+    return last7Days.includes(item.label)
+  })
+
+  // 데이터가 7개보다 적으면 그대로 반환
+  if (filteredBarData.length <= 7) {
+    return {
+      ...data,
+      barChartData: filteredBarData,
+      lineChartData: filteredLineData,
+    }
+  }
+
+  // 최근 7일 데이터만 포함하도록 필터링
+  const result = {
+    ...data,
+    barChartData: filteredBarData.slice(-7),
+    lineChartData: filteredLineData.slice(-7),
+  }
+
+  return result
+}
 
 export default function StatisticsPage() {
   // 상태 관리
@@ -58,6 +118,7 @@ export default function StatisticsPage() {
   const [tradingPriceData, setTradingPriceData] = useState<PowerTradingPriceData | null>(null)
   const [tradingVolumeData, setTradingVolumeData] = useState<PowerTradingVolumeData | null>(null)
   const [stationPriceData, setStationPriceData] = useState<StatisticsData | null>(null)
+  const [chargingTypeData, setChargingTypeData] = useState<StatisticsData | null>(null)
 
   // 집계된 데이터 상태
   const [aggregatedCostData, setAggregatedCostData] = useState<StatisticsData | null>(null)
@@ -104,6 +165,7 @@ export default function StatisticsPage() {
         tradingPriceResult,
         tradingVolumeResult,
         stationPriceResult,
+        chargingTypeResult,
       ] = await Promise.all([
         fetchCostData(activeTab, apiTimeRange),
         fetchChargingVolumeData(activeTab, apiTimeRange),
@@ -118,6 +180,7 @@ export default function StatisticsPage() {
         fetchPowerTradingPriceData(apiTimeRange),
         fetchPowerTradingVolumeData(apiTimeRange),
         fetchStationPriceDistributionData(),
+        fetchChargingTypeData(apiTimeRange),
       ])
 
       // 상태 업데이트
@@ -134,13 +197,29 @@ export default function StatisticsPage() {
       setTradingPriceData(tradingPriceResult)
       setTradingVolumeData(tradingVolumeResult)
       setStationPriceData(stationPriceResult)
+      setChargingTypeData(chargingTypeResult)
 
-      // 데이터 집계
-      setAggregatedCostData(aggregateStatisticsData(costResult, timeRange as "day" | "week" | "month" | "year"))
-      setAggregatedVolumeData(aggregateStatisticsData(volumeResult, timeRange as "day" | "week" | "month" | "year"))
-      setAggregatedInfoData(aggregateStatisticsData(infoResult, timeRange as "day" | "week" | "month" | "year"))
-      setAggregatedStatusData(aggregateStatisticsData(statusResult, timeRange as "day" | "week" | "month" | "year"))
-      setAggregatedTradingData(aggregateStatisticsData(tradingResult, timeRange as "day" | "week" | "month" | "year"))
+      // 데이터 집계 및 필터링
+      let processedCostData = aggregateStatisticsData(costResult, timeRange as "day" | "week" | "month" | "year")
+      let processedVolumeData = aggregateStatisticsData(volumeResult, timeRange as "day" | "week" | "month" | "year")
+      let processedInfoData = aggregateStatisticsData(infoResult, timeRange as "day" | "week" | "month" | "year")
+      let processedStatusData = aggregateStatisticsData(statusResult, timeRange as "day" | "week" | "month" | "year")
+      let processedTradingData = aggregateStatisticsData(tradingResult, timeRange as "day" | "week" | "month" | "year")
+
+      // 일간 데이터인 경우 최근 7일만 표시
+      if (timeRange === "day") {
+        processedCostData = filterLastSevenDays(processedCostData)
+        processedVolumeData = filterLastSevenDays(processedVolumeData)
+        processedInfoData = filterLastSevenDays(processedInfoData)
+        processedStatusData = filterLastSevenDays(processedStatusData)
+        processedTradingData = filterLastSevenDays(processedTradingData)
+      }
+
+      setAggregatedCostData(processedCostData)
+      setAggregatedVolumeData(processedVolumeData)
+      setAggregatedInfoData(processedInfoData)
+      setAggregatedStatusData(processedStatusData)
+      setAggregatedTradingData(processedTradingData)
     } catch (err) {
       setError("데이터를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.")
       console.error("데이터 로딩 오류:", err)
@@ -178,6 +257,7 @@ export default function StatisticsPage() {
           tradingPriceResult,
           tradingVolumeResult,
           stationPriceResult,
+          chargingTypeResult,
         ] = await Promise.all([
           fetchCostData(activeTab, apiTimeRange),
           fetchChargingVolumeData(activeTab, apiTimeRange),
@@ -192,6 +272,7 @@ export default function StatisticsPage() {
           fetchPowerTradingPriceData(apiTimeRange),
           fetchPowerTradingVolumeData(apiTimeRange),
           fetchStationPriceDistributionData(),
+          fetchChargingTypeData(apiTimeRange),
         ])
 
         // 상태 업데이트
@@ -208,13 +289,32 @@ export default function StatisticsPage() {
         setTradingPriceData(tradingPriceResult)
         setTradingVolumeData(tradingVolumeResult)
         setStationPriceData(stationPriceResult)
+        setChargingTypeData(chargingTypeResult)
 
-        // 데이터 집계
-        setAggregatedCostData(aggregateStatisticsData(costResult, timeRange as "day" | "week" | "month" | "year"))
-        setAggregatedVolumeData(aggregateStatisticsData(volumeResult, timeRange as "day" | "week" | "month" | "year"))
-        setAggregatedInfoData(aggregateStatisticsData(infoResult, timeRange as "day" | "week" | "month" | "year"))
-        setAggregatedStatusData(aggregateStatisticsData(statusResult, timeRange as "day" | "week" | "month" | "year"))
-        setAggregatedTradingData(aggregateStatisticsData(tradingResult, timeRange as "day" | "week" | "month" | "year"))
+        // 데이터 집계 및 필터링
+        let processedCostData = aggregateStatisticsData(costResult, timeRange as "day" | "week" | "month" | "year")
+        let processedVolumeData = aggregateStatisticsData(volumeResult, timeRange as "day" | "week" | "month" | "year")
+        let processedInfoData = aggregateStatisticsData(infoResult, timeRange as "day" | "week" | "month" | "year")
+        let processedStatusData = aggregateStatisticsData(statusResult, timeRange as "day" | "week" | "month" | "year")
+        let processedTradingData = aggregateStatisticsData(
+          tradingResult,
+          timeRange as "day" | "week" | "month" | "year",
+        )
+
+        // 일간 데이터인 경우 최근 7일만 표시
+        if (timeRange === "day") {
+          processedCostData = filterLastSevenDays(processedCostData)
+          processedVolumeData = filterLastSevenDays(processedVolumeData)
+          processedInfoData = filterLastSevenDays(processedInfoData)
+          processedStatusData = filterLastSevenDays(processedStatusData)
+          processedTradingData = filterLastSevenDays(processedTradingData)
+        }
+
+        setAggregatedCostData(processedCostData)
+        setAggregatedVolumeData(processedVolumeData)
+        setAggregatedInfoData(processedInfoData)
+        setAggregatedStatusData(processedStatusData)
+        setAggregatedTradingData(processedTradingData)
 
         // Add this line to load the time-based meter value data
         const timeTypeData = await fetchTimeTypeMeterValueData()
@@ -280,32 +380,39 @@ export default function StatisticsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">통계 대시보드</h1>
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Button variant={timeRange === "day" ? "default" : "outline"} size="sm" onClick={() => setTimeRange("day")}>
-              일간
-            </Button>
-            <Button
-              variant={timeRange === "week" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("week")}
-            >
-              주간
-            </Button>
-            <Button
-              variant={timeRange === "month" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("month")}
-            >
-              월간
-            </Button>
-            <Button
-              variant={timeRange === "year" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTimeRange("year")}
-            >
-              연간
-            </Button>
-          </div>
+          {/* 원형 그래프 탭이 아닐 때만 시간 범위 버튼 표시 */}
+          {activeTab !== "pie" && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={timeRange === "day" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTimeRange("day")}
+              >
+                일간
+              </Button>
+              <Button
+                variant={timeRange === "week" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTimeRange("week")}
+              >
+                주간
+              </Button>
+              <Button
+                variant={timeRange === "month" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTimeRange("month")}
+              >
+                월간
+              </Button>
+              <Button
+                variant={timeRange === "year" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTimeRange("year")}
+              >
+                연간
+              </Button>
+            </div>
+          )}
           <Button variant="outline" size="sm" onClick={() => handleExportData("excel")}>
             <Download className="h-4 w-4 mr-2" />
             내보내기
@@ -451,13 +558,13 @@ export default function StatisticsPage() {
               </CardContent>
             </Card>
 
-            {aggregatedInfoData && (
+            {chargingTypeData && (
               <Card>
                 <CardHeader>
                   <CardTitle>충전 결과 분포</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <PieChart data={aggregatedInfoData.pieChartData} />
+                  <PieChart data={chargingTypeData.pieChartData} />
                 </CardContent>
               </Card>
             )}
@@ -473,16 +580,7 @@ export default function StatisticsPage() {
               </Card>
             )}
 
-            {aggregatedTradingData && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>전력 거래 유형</CardTitle>
-                </CardHeader>
-                <CardContent className="h-80">
-                  <PieChart data={aggregatedTradingData.pieChartData} />
-                </CardContent>
-              </Card>
-            )}
+            {/* 전력 거래 유형 차트 제거됨 */}
           </div>
         </TabsContent>
 
@@ -492,10 +590,19 @@ export default function StatisticsPage() {
             {aggregatedCostData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>일별 비용 추이</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    비용 추이
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={aggregatedCostData.lineChartData} color="#4CAF50" />
+                  <LineChart data={aggregatedCostData.lineChartData} color="#4CAF50" yAxisUnit="원" />
                 </CardContent>
               </Card>
             )}
@@ -503,10 +610,19 @@ export default function StatisticsPage() {
             {aggregatedVolumeData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>시간별 충전량 (kWh)</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    충전량
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={aggregatedVolumeData.lineChartData} color="#2196F3" />
+                  <LineChart data={aggregatedVolumeData.lineChartData} color="#2196F3" yAxisUnit="kWh" />
                 </CardContent>
               </Card>
             )}
@@ -514,10 +630,19 @@ export default function StatisticsPage() {
             {aggregatedInfoData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>시간대별 충전 횟수</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    충전 횟수
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={aggregatedInfoData.lineChartData} color="#FFC107" />
+                  <LineChart data={aggregatedInfoData.lineChartData} color="#FFC107" yAxisUnit="회" />
                 </CardContent>
               </Card>
             )}
@@ -525,10 +650,19 @@ export default function StatisticsPage() {
             {aggregatedStatusData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>월별 충전기 가동률</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    충전기 가동률
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={aggregatedStatusData.lineChartData} color="#F44336" />
+                  <LineChart data={aggregatedStatusData.lineChartData} color="#F44336" yAxisUnit="%" />
                 </CardContent>
               </Card>
             )}
@@ -536,10 +670,19 @@ export default function StatisticsPage() {
             {aggregatedTradingData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>시간별 전력 거래량</CardTitle>
+                  <CardTitle>
+                    {timeRange === "day"
+                      ? "일별"
+                      : timeRange === "week"
+                        ? "주별"
+                        : timeRange === "month"
+                          ? "월별"
+                          : "연별"}{" "}
+                    전력 거래량
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={aggregatedTradingData.lineChartData} color="#9C27B0" />
+                  <LineChart data={aggregatedTradingData.lineChartData} color="#9C27B0" yAxisUnit="kWh" />
                 </CardContent>
               </Card>
             )}

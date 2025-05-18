@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -124,9 +123,13 @@ export default function OcppLiveMonitor() {
     URL.revokeObjectURL(url)
   }
 
+  // 메시지 클릭 핸들러 수정
   const handleMessageClick = (message: OcppWebSocketMessage) => {
-    setSelectedMessage(message)
-    setIsDetailModalOpen(true)
+    // 메시지가 유효한지 확인
+    if (message && typeof message === "object") {
+      setSelectedMessage(message)
+      setIsDetailModalOpen(true)
+    }
   }
 
   const getDirectionBadge = (direction: string) => {
@@ -165,6 +168,127 @@ export default function OcppLiveMonitor() {
         </Badge>
       )
     }
+  }
+
+  // 메시지에서 액션 이름 추출
+  const getMessageAction = (message: OcppWebSocketMessage): string => {
+    // 원본 데이터에서 액션 이름 추출 시도
+    const rawData = message.rawData
+
+    try {
+      // 문자열인 경우 파싱 시도
+      if (typeof rawData === "string") {
+        const parsed = JSON.parse(rawData)
+
+        // OCPP 메시지 형식 [MessageTypeId, UniqueId, Action/Payload]
+        if (Array.isArray(parsed)) {
+          // 메시지 타입에 따라 다른 처리
+          const messageTypeId = parsed[0]
+
+          if (messageTypeId === 2 && typeof parsed[2] === "string") {
+            // 요청 메시지: [2, "uniqueId", "Action", {...}]
+            return parsed[2]
+          } else if (messageTypeId === 3) {
+            // 응답 메시지: [3, "uniqueId", {...}]
+            // 응답 메시지는 액션 이름이 없으므로 "응답"으로 표시
+            return "응답"
+          } else if (messageTypeId === 4) {
+            // 오류 메시지: [4, "uniqueId", {...}]
+            return "오류"
+          }
+        }
+      } else if (Array.isArray(rawData)) {
+        // 이미 배열인 경우
+        const messageTypeId = rawData[0]
+
+        if (messageTypeId === 2 && typeof rawData[2] === "string") {
+          return rawData[2]
+        } else if (messageTypeId === 3) {
+          return "응답"
+        } else if (messageTypeId === 4) {
+          return "오류"
+        }
+      }
+    } catch (e) {
+      // 파싱 실패 시 기본값 사용
+    }
+
+    // 기본값
+    return message.action || "알 수 없음"
+  }
+
+  // 메시지 ID 추출
+  const getMessageId = (message: OcppWebSocketMessage): string => {
+    const rawData = message.rawData
+
+    try {
+      // 문자열인 경우 파싱 시도
+      if (typeof rawData === "string") {
+        const parsed = JSON.parse(rawData)
+
+        // OCPP 메시지 형식 [MessageTypeId, UniqueId, Action/Payload]
+        if (Array.isArray(parsed) && parsed.length > 1 && typeof parsed[1] === "string") {
+          return parsed[1]
+        }
+      } else if (Array.isArray(rawData) && rawData.length > 1 && typeof rawData[1] === "string") {
+        return rawData[1]
+      }
+    } catch (e) {
+      // 파싱 실패 시 기본값 사용
+    }
+
+    // 기본값
+    return message.messageId || "알 수 없음"
+  }
+
+  // 메시지에서 간단한 설명 추출
+  const getMessageSummary = (message: OcppWebSocketMessage): string => {
+    const rawData = message.rawData
+
+    try {
+      let parsed = rawData
+
+      // 문자열인 경우 파싱 시도
+      if (typeof rawData === "string") {
+        parsed = JSON.parse(rawData)
+      }
+
+      // OCPP 메시지 형식 [MessageTypeId, UniqueId, Action/Payload]
+      if (Array.isArray(parsed)) {
+        const messageTypeId = parsed[0]
+
+        if (messageTypeId === 2 && parsed.length > 3 && typeof parsed[3] === "object") {
+          // 요청 메시지의 주요 필드 추출
+          const payload = parsed[3]
+
+          if (parsed[2] === "BootNotification" && payload.chargingStation) {
+            return `모델: ${payload.chargingStation.model || "알 수 없음"}, 벤더: ${payload.chargingStation.vendorName || "알 수 없음"}`
+          } else if (parsed[2] === "StatusNotification" && payload.status) {
+            return `상태: ${payload.status}`
+          } else if (parsed[2] === "Authorize" && payload.idToken) {
+            return `ID: ${payload.idToken.idToken || "알 수 없음"}`
+          } else if (parsed[2] === "MeterValues" && payload.meterValue) {
+            return `미터값 업데이트`
+          } else if (parsed[2] === "Heartbeat") {
+            return `하트비트`
+          }
+        } else if (messageTypeId === 3 && parsed.length > 2 && typeof parsed[2] === "object") {
+          // 응답 메시지의 주요 필드 추출
+          const payload = parsed[2]
+
+          if (payload.status) {
+            return `상태: ${payload.status}`
+          } else if (payload.currentTime) {
+            return `시간: ${payload.currentTime.split("T")[1].split(".")[0]}`
+          }
+        }
+      }
+    } catch (e) {
+      // 파싱 실패 시 기본값 사용
+    }
+
+    // 기본값
+    return message.summary || ""
   }
 
   return (
@@ -250,78 +374,37 @@ export default function OcppLiveMonitor() {
           </div>
         </div>
 
-        {/* 로그 표시 */}
-        <Tabs defaultValue="formatted">
-          <TabsList className="bg-zinc-800">
-            <TabsTrigger value="formatted">포맷된 로그</TabsTrigger>
-            <TabsTrigger value="raw">원시 로그</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="formatted" className="mt-2">
-            <div className="h-[600px] overflow-y-auto bg-zinc-900 rounded-md p-2 font-mono text-sm">
-              {filteredMessages.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-zinc-500">
-                  {isConnected ? "메시지를 기다리는 중..." : "WebSocket에 연결하여 메시지를 수신하세요."}
-                </div>
-              ) : (
-                filteredMessages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className="p-2 mb-2 rounded hover:bg-zinc-800 cursor-pointer"
-                    onClick={() => handleMessageClick(msg)}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-zinc-400">{formatTimestamp(msg.timestamp)}</span>
-                      {getDirectionBadge(msg.direction)}
-                      <span className="font-semibold">{msg.messageType}</span>
-                    </div>
-                    <div className="pl-4 border-l-2 border-zinc-700">
-                      {msg.stationId && (
-                        <div>
-                          <span className="text-zinc-400">충전소:</span> {msg.stationId}
-                        </div>
-                      )}
-                      {msg.chargerId && (
-                        <div>
-                          <span className="text-zinc-400">충전기:</span> {msg.chargerId}
-                        </div>
-                      )}
-                      <div className="text-zinc-300 mt-1">{msg.summary}</div>
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
+        {/* 로그 표시 - 간결한 형태로 변경 */}
+        <div className="h-[600px] overflow-y-auto bg-zinc-900 rounded-md p-2">
+          {filteredMessages.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-zinc-500">
+              {isConnected ? "메시지를 기다리는 중..." : "WebSocket에 연결하여 메시지를 수신하세요."}
             </div>
-          </TabsContent>
-
-          <TabsContent value="raw" className="mt-2">
-            <div className="h-[600px] overflow-y-auto bg-zinc-900 rounded-md p-2 font-mono text-xs">
-              {filteredMessages.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-zinc-500">
-                  {isConnected ? "메시지를 기다리는 중..." : "WebSocket에 연결하여 메시지를 수신하세요."}
-                </div>
-              ) : (
-                filteredMessages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className="p-2 mb-2 rounded hover:bg-zinc-800 cursor-pointer whitespace-pre-wrap"
-                    onClick={() => handleMessageClick(msg)}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-zinc-400">{formatTimestamp(msg.timestamp)}</span>
-                      {getDirectionBadge(msg.direction)}
-                    </div>
-                    <div className="pl-4 border-l-2 border-zinc-700 overflow-x-auto">
-                      {JSON.stringify(msg.rawData, null, 2)}
-                    </div>
+          ) : (
+            filteredMessages.map((msg, index) => (
+              <div
+                key={index}
+                className="p-3 mb-2 rounded hover:bg-zinc-800 cursor-pointer border border-zinc-800"
+                onClick={() => handleMessageClick(msg)}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-400 text-sm">{formatTimestamp(msg.timestamp)}</span>
+                    {getDirectionBadge(msg.direction)}
                   </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </TabsContent>
-        </Tabs>
+                </div>
+                <div className="flex flex-col">
+                  <div className="font-semibold text-zinc-200">{getMessageAction(msg)}</div>
+                  <div className="text-sm text-zinc-400 mt-1 truncate" title={getMessageId(msg)}>
+                    ID: {getMessageId(msg)}
+                  </div>
+                  <div className="text-sm text-zinc-400 mt-1">{getMessageSummary(msg)}</div>
+                </div>
+              </div>
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* 상세 정보 모달 */}
