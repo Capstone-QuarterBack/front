@@ -9,7 +9,7 @@ import { LineChart } from "@/components/charts/LineChart"
 import { PieChart } from "@/components/charts/PieChart"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Download } from 'lucide-react'
+import { AlertCircle, Download } from "lucide-react"
 import type { StatisticsData } from "@/types/chart"
 import {
   fetchStatisticsSummary,
@@ -24,6 +24,8 @@ import {
   fetchPowerTradingRevenueData,
   fetchPowerTradingPriceData,
   fetchPowerTradingVolumeData,
+  fetchTimeTypeMeterValueData,
+  fetchStationPriceDistributionData,
   exportStatisticsData,
   type StatisticsSummary,
   type ChargerUptimeData,
@@ -55,6 +57,7 @@ export default function StatisticsPage() {
   const [tradingRevenueData, setTradingRevenueData] = useState<PowerTradingRevenueData | null>(null)
   const [tradingPriceData, setTradingPriceData] = useState<PowerTradingPriceData | null>(null)
   const [tradingVolumeData, setTradingVolumeData] = useState<PowerTradingVolumeData | null>(null)
+  const [stationPriceData, setStationPriceData] = useState<StatisticsData | null>(null)
 
   // 집계된 데이터 상태
   const [aggregatedCostData, setAggregatedCostData] = useState<StatisticsData | null>(null)
@@ -70,6 +73,13 @@ export default function StatisticsPage() {
     month: "lastmonth",
     year: "lastyear",
   }
+
+  // For the time-based charging volume section:
+  const [timeTypeMeterValueData, setTimeTypeMeterValueData] = useState<StatisticsData>({
+    barChartData: [],
+    lineChartData: [],
+    pieChartData: [],
+  })
 
   // 데이터 로딩 함수
   const loadData = async () => {
@@ -93,6 +103,7 @@ export default function StatisticsPage() {
         tradingRevenueResult,
         tradingPriceResult,
         tradingVolumeResult,
+        stationPriceResult,
       ] = await Promise.all([
         fetchCostData(activeTab, apiTimeRange),
         fetchChargingVolumeData(activeTab, apiTimeRange),
@@ -106,6 +117,7 @@ export default function StatisticsPage() {
         fetchPowerTradingRevenueData(apiTimeRange),
         fetchPowerTradingPriceData(apiTimeRange),
         fetchPowerTradingVolumeData(apiTimeRange),
+        fetchStationPriceDistributionData(),
       ])
 
       // 상태 업데이트
@@ -121,6 +133,7 @@ export default function StatisticsPage() {
       setTradingRevenueData(tradingRevenueResult)
       setTradingPriceData(tradingPriceResult)
       setTradingVolumeData(tradingVolumeResult)
+      setStationPriceData(stationPriceResult)
 
       // 데이터 집계
       setAggregatedCostData(aggregateStatisticsData(costResult, timeRange as "day" | "week" | "month" | "year"))
@@ -145,6 +158,75 @@ export default function StatisticsPage() {
 
   // 시간 범위나 활성 탭이 변경될 때 데이터 다시 로드
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Keep the existing data loading code
+        const apiTimeRange = timeRangeMapping[timeRange] || timeRange
+
+        // 병렬로 모든 데이터 요청
+        const [
+          costResult,
+          volumeResult,
+          infoResult,
+          statusResult,
+          tradingResult,
+          summaryResult,
+          uptimeResult,
+          failureResult,
+          repairTimeResult,
+          tradingRevenueResult,
+          tradingPriceResult,
+          tradingVolumeResult,
+          stationPriceResult,
+        ] = await Promise.all([
+          fetchCostData(activeTab, apiTimeRange),
+          fetchChargingVolumeData(activeTab, apiTimeRange),
+          fetchChargingInfoData(activeTab, apiTimeRange),
+          fetchChargerStatusData(activeTab, apiTimeRange),
+          fetchPowerTradingData(activeTab, apiTimeRange),
+          fetchStatisticsSummary(apiTimeRange),
+          fetchChargerUptimeData(apiTimeRange),
+          fetchChargerFailureData(apiTimeRange),
+          fetchRepairTimeData(apiTimeRange),
+          fetchPowerTradingRevenueData(apiTimeRange),
+          fetchPowerTradingPriceData(apiTimeRange),
+          fetchPowerTradingVolumeData(apiTimeRange),
+          fetchStationPriceDistributionData(),
+        ])
+
+        // 상태 업데이트
+        setCostData(costResult)
+        setVolumeData(volumeResult)
+        setInfoData(infoResult)
+        setStatusData(statusResult)
+        setTradingData(tradingResult)
+        setSummaryData(summaryResult)
+        setUptimeData(uptimeResult)
+        setFailureData(failureResult)
+        setRepairTimeData(repairTimeResult)
+        setTradingRevenueData(tradingRevenueResult)
+        setTradingPriceData(tradingPriceResult)
+        setTradingVolumeData(tradingVolumeResult)
+        setStationPriceData(stationPriceResult)
+
+        // 데이터 집계
+        setAggregatedCostData(aggregateStatisticsData(costResult, timeRange as "day" | "week" | "month" | "year"))
+        setAggregatedVolumeData(aggregateStatisticsData(volumeResult, timeRange as "day" | "week" | "month" | "year"))
+        setAggregatedInfoData(aggregateStatisticsData(infoResult, timeRange as "day" | "week" | "month" | "year"))
+        setAggregatedStatusData(aggregateStatisticsData(statusResult, timeRange as "day" | "week" | "month" | "year"))
+        setAggregatedTradingData(aggregateStatisticsData(tradingResult, timeRange as "day" | "week" | "month" | "year"))
+
+        // Add this line to load the time-based meter value data
+        const timeTypeData = await fetchTimeTypeMeterValueData()
+        setTimeTypeMeterValueData(timeTypeData)
+      } catch (error) {
+        setError("데이터를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.")
+        console.error("데이터 로딩 오류:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     loadData()
   }, [timeRange, activeTab])
 
@@ -346,27 +428,28 @@ export default function StatisticsPage() {
         {/* 원형 그래프 섹션 */}
         <TabsContent value="pie" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {aggregatedCostData && (
+            {stationPriceData && (
               <Card>
                 <CardHeader>
                   <CardTitle>충전소별 비용 분포</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <PieChart data={aggregatedCostData.pieChartData} />
+                  <PieChart data={stationPriceData.pieChartData} />
                 </CardContent>
               </Card>
             )}
 
-            {aggregatedVolumeData && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>시간대별 충전량</CardTitle>
-                </CardHeader>
-                <CardContent className="h-80">
-                  <PieChart data={aggregatedVolumeData.pieChartData} />
-                </CardContent>
-              </Card>
-            )}
+            {/* 시간대별 충전량 */}
+            <Card className="col-span-1 row-span-1 bg-black text-white border-0">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-bold">시간대별 충전량</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <PieChart data={timeTypeMeterValueData.pieChartData} width={300} height={300} />
+                </div>
+              </CardContent>
+            </Card>
 
             {aggregatedInfoData && (
               <Card>

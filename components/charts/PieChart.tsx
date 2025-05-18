@@ -33,6 +33,21 @@ export function PieChart({ data, width = 300, height = 300 }: PieChartProps) {
     // Calculate total value for percentage
     const total = data.reduce((sum, item) => sum + item.value, 0)
 
+    // If total is 0, draw empty circle with message
+    if (total === 0) {
+      ctx.beginPath()
+      ctx.arc(width / 2, height / 2, Math.min(width, height) / 2 - 40, 0, 2 * Math.PI)
+      ctx.fillStyle = "#333"
+      ctx.fill()
+
+      ctx.fillStyle = "#fff"
+      ctx.font = "14px sans-serif"
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      ctx.fillText("데이터 없음", width / 2, height / 2)
+      return
+    }
+
     // Draw pie chart
     let startAngle = 0
     const centerX = width / 2
@@ -48,7 +63,15 @@ export function PieChart({ data, width = 300, height = 300 }: PieChartProps) {
       ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle)
       ctx.closePath()
 
-      ctx.fillStyle = item.color
+      // Use specific colors for day/night if those labels are present
+      let fillColor = item.color
+      if (item.label === "주간") {
+        fillColor = "#FFC107" // Yellow for daytime
+      } else if (item.label === "야간") {
+        fillColor = "#3F51B5" // Dark blue for nighttime
+      }
+
+      ctx.fillStyle = fillColor
       ctx.fill()
       ctx.lineWidth = 2
       ctx.strokeStyle = "white"
@@ -72,10 +95,10 @@ export function PieChart({ data, width = 300, height = 300 }: PieChartProps) {
       startAngle += sliceAngle
     })
 
-    // Draw legend
+    // Draw legend with station names
     const legendX = 10
-    const legendY = height - data.length * 20 - 10
-    const legendSpacing = 20
+    const legendY = height - data.length * 25 - 10 // Increased spacing for better readability
+    const legendSpacing = 25 // Increased spacing between legend items
 
     data.forEach((item, index) => {
       const y = legendY + index * legendSpacing
@@ -84,12 +107,26 @@ export function PieChart({ data, width = 300, height = 300 }: PieChartProps) {
       ctx.fillStyle = item.color
       ctx.fillRect(legendX, y, 12, 12)
 
-      // Draw label
-      ctx.fillStyle = "#333"
+      // Format the value as currency
+      const formattedValue = new Intl.NumberFormat("ko-KR", {
+        style: "currency",
+        currency: "KRW",
+        maximumFractionDigits: 0,
+      }).format(item.value)
+
+      // Draw station name and value
+      ctx.fillStyle = "#fff"
       ctx.font = "12px sans-serif"
       ctx.textAlign = "left"
       ctx.textBaseline = "middle"
-      ctx.fillText(`${item.label} (${item.value})`, legendX + 18, y + 6)
+
+      // Truncate station name if too long
+      let displayLabel = item.label
+      if (displayLabel.length > 12) {
+        displayLabel = displayLabel.substring(0, 10) + "..."
+      }
+
+      ctx.fillText(`${displayLabel} (${formattedValue})`, legendX + 18, y + 6)
     })
   }, [data, width, height])
 

@@ -158,6 +158,24 @@ function getColorForLabel(label: string): string {
     충전중: "#2196F3",
     대기중: "#9C27B0",
     오프라인: "#607D8B",
+    주간: "#FFC107",
+    야간: "#3F51B5",
+  }
+
+  // If it's a station name (not in our predefined map), assign a color based on hash
+  if (!colorMap[label]) {
+    // Simple hash function to generate consistent colors for station names
+    let hash = 0
+    for (let i = 0; i < label.length; i++) {
+      hash = label.charCodeAt(i) + ((hash << 5) - hash)
+    }
+
+    // Convert to RGB
+    const r = (hash & 0xff0000) >> 16
+    const g = (hash & 0x00ff00) >> 8
+    const b = hash & 0x0000ff
+
+    return `rgb(${Math.abs((r % 200) + 55)}, ${Math.abs((g % 200) + 55)}, ${Math.abs((b % 200) + 55)})`
   }
 
   return colorMap[label] || "#9E9E9E" // 기본 색상
@@ -371,6 +389,45 @@ export async function fetchPowerTradingVolumeData(timeRange: string): Promise<Po
         date: "2023-05-03",
         volume: 1820,
       },
+    }
+  }
+}
+
+// Add this new function after the other fetch functions
+export async function fetchTimeTypeMeterValueData(): Promise<StatisticsData> {
+  try {
+    const apiResponse = await apiRequest<ApiStatisticsResponse>(`/statistics/time-type-metervalue?chartType=PIE`)
+    return convertApiResponseToChartData(apiResponse)
+  } catch (error) {
+    console.error("시간대별 충전량 데이터 가져오기 실패:", error)
+    // 목데이터 반환
+    return {
+      barChartData: [],
+      lineChartData: [],
+      pieChartData: [
+        { label: "주간", value: 52.7, color: "#4CAF50" },
+        { label: "야간", value: 47.3, color: "#2196F3" },
+      ],
+    }
+  }
+}
+
+// Add this new function after the other fetch functions
+export async function fetchStationPriceDistributionData(): Promise<StatisticsData> {
+  try {
+    const apiResponse = await apiRequest<ApiStatisticsResponse>(`/statistics/stations-price?chartType=PIE`)
+    return convertApiResponseToChartData(apiResponse)
+  } catch (error) {
+    console.error("충전소별 비용 분포 데이터 가져오기 실패:", error)
+    // 목데이터 반환
+    return {
+      barChartData: [],
+      lineChartData: [],
+      pieChartData: [
+        { label: "세종대학교", value: 7300, color: "#4CAF50" },
+        { label: "광진구청", value: 1200, color: "#2196F3" },
+        { label: "건국대학교", value: 800, color: "#FFC107" },
+      ],
     }
   }
 }
