@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Card } from "@/components/ui/card"
 import { fetchTransactionSummary } from "@/services/transactionApi"
-import { formatNumber } from "@/lib/utils/number-utils"
+import { loadingStyles } from "@/lib/utils/style-utils"
 
 interface TransactionSummaryProps {
   startDate: string
@@ -11,26 +12,32 @@ interface TransactionSummaryProps {
 }
 
 export function TransactionSummary({ startDate, endDate, stationName }: TransactionSummaryProps) {
-  const [summaryData, setSummaryData] = useState({
-    totalMeterValue: 0,
-    totalPrice: 0,
-  })
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [totalDischargeAmount, setTotalDischargeAmount] = useState<number>(0)
+  const [totalPrice, setTotalPrice] = useState<number>(0)
 
   useEffect(() => {
     const loadSummary = async () => {
+      // Don't load if no station is selected yet
+      if (!stationName) {
+        setIsLoading(false)
+        return
+      }
+
       try {
         setIsLoading(true)
         const response = await fetchTransactionSummary(startDate, endDate, stationName)
 
         if (response.status === "success" && response.data) {
-          setSummaryData({
-            totalMeterValue: response.data.totalMeterValue,
-            totalPrice: response.data.totalPrice,
-          })
+          // totalMeterValue is actually the discharge amount
+          setTotalDischargeAmount(response.data.totalMeterValue)
+          setTotalPrice(response.data.totalPrice)
         }
       } catch (error) {
-        console.error("Error loading summary:", error)
+        console.error("Error loading transaction summary:", error)
+        // Set defaults on error
+        setTotalDischargeAmount(0)
+        setTotalPrice(0)
       } finally {
         setIsLoading(false)
       }
@@ -39,28 +46,27 @@ export function TransactionSummary({ startDate, endDate, stationName }: Transact
     loadSummary()
   }, [startDate, endDate, stationName])
 
-  // For the third value (ESS방전량), we'll use a placeholder since it's not in the API
-  // In a real application, you would fetch this from another API or calculate it
-  const essDischargeAmount = 102501
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 bg-zinc-800 rounded-lg p-4">
-      <div className="flex flex-col items-center p-3">
-        <div className="text-sm text-zinc-400 mb-2">총 수익</div>
-        <div className="text-xl font-bold">
-          {isLoading ? "로딩 중..." : `${formatNumber(summaryData.totalPrice)} (KRW)`}
-        </div>
-      </div>
-      <div className="flex flex-col items-center p-3 border-l border-r border-zinc-700">
-        <div className="text-sm text-zinc-400 mb-2">총 ESS충전량</div>
-        <div className="text-xl font-bold">
-          {isLoading ? "로딩 중..." : `${formatNumber(summaryData.totalMeterValue)} (KWh)`}
-        </div>
-      </div>
-      <div className="flex flex-col items-center p-3">
-        <div className="text-sm text-zinc-400 mb-2">총 ESS방전량</div>
-        <div className="text-xl font-bold">{formatNumber(essDischargeAmount)} (KWh)</div>
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      {/* 총 수익 */}
+      <Card className="bg-zinc-800 p-4 flex flex-col items-center justify-center">
+        <span className="text-zinc-400 text-sm mb-1">총 수익</span>
+        {isLoading ? (
+          <div className={loadingStyles.smallSpinner}></div>
+        ) : (
+          <span className="text-2xl font-bold">{totalPrice.toLocaleString()} (KRW)</span>
+        )}
+      </Card>
+
+      {/* ESS 방전량 */}
+      <Card className="bg-zinc-800 p-4 flex flex-col items-center justify-center">
+        <span className="text-zinc-400 text-sm mb-1">ESS 방전량</span>
+        {isLoading ? (
+          <div className={loadingStyles.smallSpinner}></div>
+        ) : (
+          <span className="text-2xl font-bold">{totalDischargeAmount.toLocaleString()} (kWh)</span>
+        )}
+      </Card>
     </div>
   )
 }

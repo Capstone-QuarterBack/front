@@ -11,7 +11,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   fetchTransactionRecords,
   fetchTransactionById,
-  getCurrentMonthDateRange,
+  fetchChargingStationNames,
+  getDefaultDateRange,
   type TransactionRecord,
 } from "@/services/transactionApi"
 import { loadingStyles, errorStyles } from "@/lib/utils/style-utils"
@@ -34,20 +35,48 @@ export default function TransactionHistory() {
     totalPages: 1,
   })
 
-  // Get current month date range
-  const { firstDate, secondDate } = getCurrentMonthDateRange()
+  // Get default date range
+  const { firstDate, secondDate } = getDefaultDateRange()
   const [dateRange, setDateRange] = useState({
     startDate: firstDate,
     endDate: secondDate,
   })
 
-  const [stationName, setStationName] = useState<string>("Sejong")
+  // State for charging station names and selected station
+  const [stationNames, setStationNames] = useState<string[]>([])
+  const [stationName, setStationName] = useState<string>("")
   const [searchMode, setSearchMode] = useState<"station" | "approval">("station")
   const [approvalNumber, setApprovalNumber] = useState<string>("")
+
+  // Fetch charging station names when component mounts
+  useEffect(() => {
+    const loadStationNames = async () => {
+      try {
+        const response = await fetchChargingStationNames()
+        if (response.status === "success" && response.data && response.data.length > 0) {
+          setStationNames(response.data)
+          // Set the first station as default
+          setStationName(response.data[0])
+        } else {
+          setError("충전소 목록을 불러오는데 실패했습니다.")
+        }
+      } catch (err) {
+        console.error("Error loading station names:", err)
+        setError(`충전소 목록을 불러오는데 실패했습니다: ${(err as Error).message}`)
+      }
+    }
+
+    loadStationNames()
+  }, [])
 
   // Load transaction data
   useEffect(() => {
     const loadTransactions = async () => {
+      // Don't load if no station is selected yet
+      if (!stationName && searchMode === "station") {
+        return
+      }
+
       try {
         setIsLoading(true)
         setError(null)
@@ -133,6 +162,20 @@ export default function TransactionHistory() {
     setPagination((prev) => ({ ...prev, page: 0 }))
   }
 
+  // Handle station name selection
+  const handleStationSelect = (name: string) => {
+    setStationName(name)
+    setSearchMode("station")
+    setApprovalNumber("")
+    // Reset to first page when station changes and ensure fixed page size
+    setPagination({
+      page: 0,
+      size: FIXED_PAGE_SIZE,
+      totalElements: 0,
+      totalPages: 1,
+    })
+  }
+
   // Handle station name search
   const handleStationSearch = (name: string) => {
     setStationName(name)
@@ -183,6 +226,31 @@ export default function TransactionHistory() {
     </div>
   )
 
+  // Station selector component
+  const StationSelector = () => (
+    <div className="mb-4 border border-zinc-700 rounded-md p-2">
+      <div className="flex items-center mb-2">
+        <span className="text-sm text-zinc-400 mr-2">충전소 이름으로 검색하세요</span>
+        <span className="bg-amber-500 text-black text-xs px-2 py-0.5 rounded">검색</span>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {stationNames.map((name) => (
+          <button
+            key={name}
+            onClick={() => handleStationSelect(name)}
+            className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              stationName === name
+                ? "bg-amber-500 text-black font-medium"
+                : "bg-zinc-700 text-zinc-200 hover:bg-zinc-600"
+            }`}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
   return (
     <div className="flex h-screen bg-zinc-900 text-white">
       {/* 사이드바 */}
@@ -226,6 +294,9 @@ export default function TransactionHistory() {
               </TabsList>
             </Tabs>
           </div>
+
+          {/* 충전소 선택기 */}
+          <StationSelector />
 
           {/* 충전소 검색 및 거래 내역 테이블 */}
           <Card className="overflow-hidden">
