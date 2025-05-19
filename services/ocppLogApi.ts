@@ -1,5 +1,5 @@
 // OCPP 로그 API 서비스
-
+import { API_BASE_URL } from "./apiConfig"
 export interface OcppMessage {
   timestamp: string
   stationId: string
@@ -73,7 +73,7 @@ export function generateSummary(log: OcppMessage): string {
 // 충전소 및 액션 목록 조회
 export async function fetchStationActionList(): Promise<StationActionListResponse> {
   try {
-    const response = await fetch("http://localhost:8080/api/ocpp-log/station-action-list")
+    const response = await fetch(`${API_BASE_URL}/ocpp-log/station-action-list`)
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`)
     }
@@ -113,7 +113,7 @@ export async function fetchOcppLogs(
       }
     })
 
-    const response = await fetch("http://localhost:8080/api/ocpp-log/search", {
+    const response = await fetch(`${API_BASE_URL}/ocpp-log/search`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
