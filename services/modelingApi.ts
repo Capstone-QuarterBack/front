@@ -1,5 +1,5 @@
 import type { Station, Charger } from "@/components/3d/StationVisualization"
-
+import { API_BASE_URL } from "./apiConfig"
 // API 응답 타입 정의
 interface ApiCharger {
   evseId: number
@@ -94,7 +94,7 @@ function mapApiDataToStations(apiData: ApiResponse): Station[] {
 export async function getModelingStations(): Promise<Station[]> {
   try {
     // const response = await fetch(`${API_BASE_URL}/api/modeling/stations-info`)
-    const response = await fetch(`http://localhost:8080/api/modeling/stations-info`)
+    const response = await fetch(`${API_BASE_URL}/modeling/stations-info`)
 
     if (!response.ok) {
       throw new Error(`Failed to fetch modeling stations: ${response.status}`)
@@ -112,7 +112,7 @@ export async function getModelingStations(): Promise<Station[]> {
 export async function updateModelingStationStatus(stationId: string, status: string): Promise<string> {
   try {
     // 새로운 API 엔드포인트 형식 사용
-    const response = await fetch(`http://localhost:8080/api/modeling/stations/${stationId}/${status}`, {
+    const response = await fetch(`${API_BASE_URL}/modeling/stations/${stationId}/${status}`, {
       method: "PUT",
       headers: {
         accept: "*/*",
@@ -153,7 +153,7 @@ export async function updateModelingChargerStatus(
   try {
     // 새로운 API 엔드포인트 형식 사용
     const response = await fetch(
-      `http://localhost:8080/api/modeling/stations/${stationId}/chargers/${evseId}/${apiStatus}`,
+      `${API_BASE_URL}/modeling/stations/${stationId}/chargers/${evseId}/${apiStatus}`,
       {
         method: "PUT",
         headers: {
