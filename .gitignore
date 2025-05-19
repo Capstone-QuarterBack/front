@@ -25,3 +25,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+# 프로젝트 특정 파일
+/services/apiConfig.ts

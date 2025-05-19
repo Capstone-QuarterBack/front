@@ -7,6 +7,7 @@ import { ChargingStation } from "./ChargingStation"
 import { ElectricCar } from "./ElectricCar"
 import { StationControlPanel } from "./StationControlPanel"
 import { getModelingStations, updateModelingStationStatus, updateModelingChargerStatus } from "@/services/modelingApi"
+import { toast } from "@/components/ui/use-toast"
 
 // 충전기 타입 정의
 export interface Charger {
@@ -57,6 +58,50 @@ export function StationVisualization() {
         const data = await getModelingStations()
         setStations(data)
         setError(null)
+
+        // 데이터 로드 후 비활성화된 충전소의 충전기들을 모두 비활성화 처리
+        const disabledStations = data.filter((station) => station.status === "disabled")
+        if (disabledStations.length > 0) {
+          console.log(`${disabledStations.length}개의 비활성화된 충전소의 충전기를 비활성화합니다.`)
+
+          // 각 비활성화된 충전소에 대해 모든 충전기 비활성화 API 호출
+          for (const station of disabledStations) {
+            console.log(`충전소 ${station.name}(${station.id})의 충전기를 비활성화합니다.`)
+
+            // 각 충전기에 대해 비활성화 API 호출
+            for (const charger of station.chargers) {
+              if (charger.status !== "disabled") {
+                try {
+                  // UNAVAILABLE 상태로 API 호출
+                  await updateModelingChargerStatus(station.id, charger.id, "UNAVAILABLE")
+                  console.log(`충전기 ${charger.id} 비활성화 완료`)
+                } catch (error) {
+                  console.error(`충전기 ${charger.id} 비활성화 실패:`, error)
+                }
+              }
+            }
+          }
+
+          // 상태 업데이트 - 비활성화된 충전소의 모든 충전기 상태를 disabled로 설정
+          setStations((prevStations) => {
+            return prevStations.map((station) => {
+              if (station.status === "disabled") {
+                const updatedChargers = station.chargers.map((charger) => ({
+                  ...charger,
+                  status: "disabled" as const,
+                  currentCar: null,
+                }))
+
+                return {
+                  ...station,
+                  chargers: updatedChargers,
+                  chargingCars: 0,
+                }
+              }
+              return station
+            })
+          })
+        }
       } catch (err) {
         console.error("Failed to load stations:", err)
         setError("충전소 데이터를 불러오는데 실패했습니다.")
@@ -195,6 +240,10 @@ export function StationVisualization() {
       // 새로운 API 호출 및 응답 처리
       const responseStationId = await updateModelingStationStatus(stationId, apiStatus)
       console.log(`Station ${responseStationId} status updated to ${apiStatus}`)
+      toast({
+        title: "충전소 상태 변경 성공",
+        description: `${station.name} 충전소가 ${newStatus === "active" ? "활성화" : "비활성화"}되었습니다.`,
+      })
 
       // 상태 업데이트
       setStations((prevStations) => {
@@ -238,7 +287,11 @@ export function StationVisualization() {
       }
     } catch (err) {
       console.error("Failed to update station status:", err)
-      alert("충전소 상태 변경에 실패했습니다.")
+      toast({
+        title: "충전소 상태 변경 실패",
+        description: "충전소 상태를 변경하는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -247,24 +300,62 @@ export function StationVisualization() {
     const station = stations.find((s) => s.id === stationId)
     if (!station) return
 
+    // 충전소가 비활성화 상태인 경우 작업 중단
+    if (station.status === "disabled") {
+      console.log(`충전소 ${station.name}(${station.id})가 비활성화 상태입니다. 충전기 상태를 변경할 수 없습니다.`)
+      toast({
+        title: "작업 불가",
+        description: "비활성화된 충전소의 충전기 상태는 변경할 수 없습니다.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const charger = station.chargers.find((c) => c.id === chargerId)
     if (!charger) return
 
-    // 충전기 상태 순환: available -> charging -> disabled -> available
+    // 새로운 상태 및 API 요청 상태 결정
     let newStatus: "available" | "charging" | "disabled" | "maintenance"
+    let apiStatus: string
 
-    if (charger.status === "available") {
-      newStatus = "charging"
-    } else if (charger.status === "charging") {
-      newStatus = "disabled"
-    } else {
-      newStatus = "available"
+    // 1. 충전중 -> 정지 명령 -> 충전 종료 및 사용가능으로 변경
+    if (charger.status === "charging") {
+      apiStatus = "UNAVAILABLE" // API에 UNAVAILABLE 전송
+      newStatus = "available" // 프론트에서는 사용가능으로 표시
+    }
+    // 2. 사용 가능 -> 비활성화 명령 -> 충전기가 비활성화로 변경
+    else if (charger.status === "available") {
+      apiStatus = "UNAVAILABLE" // API에 UNAVAILABLE 전송
+      newStatus = "disabled" // 프론트에서는 사용불가로 표시
+    }
+    // 3. 사용 불가능 -> 활성화 명령 -> 충전기가 사용 가능으로 변경
+    else {
+      apiStatus = "AVAILABLE" // API에 AVAILABLE 전송
+      newStatus = "available" // 프론트에서는 사용가능으로 표시
     }
 
     try {
-      // 새로운 API 호출 및 응답 처리
-      const response = await updateModelingChargerStatus(stationId, chargerId, newStatus)
-      console.log(`Charger ${response.evseId} in station ${response.stationId} status updated`)
+      // 새로운 API 호출 및 응답 처리 - 실제 API에 맞게 상태값 전달
+      console.log(`충전기 상태 변경 시도: ${charger.status} -> ${newStatus} (API: ${apiStatus})`)
+      const response = await updateModelingChargerStatus(stationId, chargerId, apiStatus)
+      console.log(
+        `Charger ${response.evseId} in station ${response.stationId} status updated to ${apiStatus} (frontend: ${newStatus})`,
+      )
+
+      // 성공 메시지 표시
+      let actionMessage = ""
+      if (charger.status === "charging") {
+        actionMessage = "충전이 정지되었습니다"
+      } else if (charger.status === "available") {
+        actionMessage = "비활성화되었습니다"
+      } else {
+        actionMessage = "활성화되었습니다"
+      }
+
+      toast({
+        title: "충전기 상태 변경 성공",
+        description: `${station.name}의 ${charger.name}가 ${actionMessage}`,
+      })
 
       // 상태 업데이트
       setStations((prevStations) => {
@@ -272,8 +363,8 @@ export function StationVisualization() {
           if (s.id === stationId) {
             const updatedChargers = s.chargers.map((c) => {
               if (c.id === chargerId) {
-                // 충전 중 상태로 변경될 때 차량 ID 설정, 그 외에는 null
-                const currentCar = newStatus === "charging" ? `car-${stationId}-${chargerId}` : null
+                // 항상 null로 설정 (충전 중 상태는 이제 없음)
+                const currentCar = null
                 return { ...c, status: newStatus, currentCar } as Charger
               }
               return c
@@ -298,7 +389,8 @@ export function StationVisualization() {
         if (updatedStation) {
           const updatedChargers = updatedStation.chargers.map((c) => {
             if (c.id === chargerId) {
-              const currentCar = newStatus === "charging" ? `car-${stationId}-${chargerId}` : null
+              // 항상 null로 설정 (충전 중 상태는 이제 없음)
+              const currentCar = null
               return { ...c, status: newStatus, currentCar } as Charger
             }
             return c
@@ -316,12 +408,17 @@ export function StationVisualization() {
 
       // 선택된 충전기가 변경된 충전기인 경우 선택된 충전기도 업데이트
       if (selectedCharger && selectedCharger.id === chargerId) {
-        const currentCar = newStatus === "charging" ? `car-${stationId}-${chargerId}` : null
+        // 항상 null로 설정 (충전 중 상태는 이제 없음)
+        const currentCar = null
         setSelectedCharger({ ...selectedCharger, status: newStatus, currentCar } as Charger)
       }
     } catch (err) {
       console.error("Failed to update charger status:", err)
-      alert("충전기 상태 변경에 실패했습니다.")
+      toast({
+        title: "충전기 상태 변경 실패",
+        description: "충전기 상태를 변경하는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
     }
   }
 

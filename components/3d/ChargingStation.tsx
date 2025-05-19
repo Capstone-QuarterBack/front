@@ -69,7 +69,7 @@ export function ChargingStation({
       case "available":
         return "이용가능"
       case "charging":
-        return "이용중"
+        return "충전중"
       case "disabled":
         return "사용불가"
       case "maintenance":

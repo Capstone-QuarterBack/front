@@ -132,43 +132,38 @@ export async function updateModelingStationStatus(stationId: string, status: str
   }
 }
 
-// 충전기 상태 업데이트 (새로운 API 엔드포인트 사용)
+// 충전기 상태 업데이트 (API 상태값 직접 전달)
 export async function updateModelingChargerStatus(
   stationId: string,
   chargerId: string,
-  status: string,
+  status: string, // "AVAILABLE" | "UNAVAILABLE" 등 API 상태값
 ): Promise<ChargerUpdateResponse> {
-  // chargerId에서 evseId 추출 (예: "station-001-1" -> 1)
-  const evseId = Number.parseInt(chargerId.split("-").pop() || "0")
-
-  // 내부 상태를 API 상태로 변환
-  const apiStatusMap: Record<string, string> = {
-    available: "AVAILABLE",
-    charging: "OCCUPIED",
-    disabled: "UNAVAILABLE",
-  }
-
-  const apiStatus = apiStatusMap[status] || "UNAVAILABLE"
-
   try {
-    // 새로운 API 엔드포인트 형식 사용
-    const response = await fetch(
-      `${API_BASE_URL}/modeling/stations/${stationId}/chargers/${evseId}/${apiStatus}`,
-      {
-        method: "PUT",
-        headers: {
-          accept: "*/*",
-        },
+    // chargerId에서 evseId 추출 (예: "station-001-1" -> 1)
+    const evseId = Number.parseInt(chargerId.split("-").pop() || "0")
+
+    console.log(`API 호출: 충전소 ${stationId}의 충전기 ${evseId} 상태를 ${status}로 변경합니다.`)
+
+    // 실제 API 호출
+    const response = await fetch(`${API_BASE_URL}/modeling/stations/${stationId}/chargers/${evseId}/${status}`, {
+      method: "PUT",
+      headers: {
+        accept: "*/*",
       },
-    )
+    })
 
     if (!response.ok) {
       throw new Error(`Failed to update charger status: ${response.status}`)
     }
 
-    // 응답은 { stationId, evseId } 객체
-    const data: ChargerUpdateResponse = await response.json()
-    return data
+    // 응답 처리
+    const responseData = await response.json()
+    console.log(`API 응답: `, responseData)
+
+    return {
+      stationId: responseData.stationId || stationId,
+      evseId: responseData.evseId || evseId,
+    }
   } catch (error) {
     console.error("Error updating charger status:", error)
     throw error
