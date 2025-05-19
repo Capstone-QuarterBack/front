@@ -39,8 +39,7 @@ import {
 } from "@/services/statisticsApi"
 import { aggregateStatisticsData } from "@/lib/utils/chart-utils"
 
-// filterLastSevenDays 함수를 완전히 다시 작성합니다.
-// 기존 함수를 아래 코드로 교체해주세요:
+// Replace the existing filterLastSevenDays function with this improved version:
 
 function filterLastSevenDays(data: StatisticsData | null): StatisticsData | null {
   if (!data) {
@@ -50,44 +49,48 @@ function filterLastSevenDays(data: StatisticsData | null): StatisticsData | null
 
   console.log("Original data:", JSON.stringify(data))
 
-  // 모든 데이터를 유지하되, 날짜 형식만 변환합니다
-  const processBarData = data.barChartData.map((item, index) => {
-    let formattedLabel = item.label
-
-    // YYYY-MM-DD 형식의 날짜를 MM/DD 형식으로 변환
-    if (item.label && item.label.includes("-") && item.label.length >= 10) {
-      formattedLabel = item.label.substring(5, 10).replace("-", "/")
+  // 최신 데이터 7개만 유지하기
+  const limitToLatest7 = (items: any[]) => {
+    // 날짜 형식이 있는 경우 날짜 기준으로 정렬
+    if (items.length > 0 && items[0].label && items[0].label.includes("-")) {
+      // 날짜 형식으로 정렬 (최신 날짜가 먼저 오도록)
+      items.sort((a, b) => {
+        // YYYY-MM-DD 형식 가정
+        return new Date(b.label).getTime() - new Date(a.label).getTime()
+      })
     }
 
-    return {
-      ...item,
-      x: index, // 인덱스 재할당
-      label: formattedLabel,
-    }
-  })
+    // 최신 7개만 유지하고 역순으로 정렬 (오래된 날짜가 먼저 오도록)
+    const latest7 = items.slice(0, 7).reverse()
 
-  const processLineData = data.lineChartData.map((item, index) => {
-    let formattedLabel = item.label
+    // x 값 재할당 및 날짜 형식 변환
+    return latest7.map((item, index) => {
+      let formattedLabel = item.label
 
-    // YYYY-MM-DD 형식의 날짜를 MM/DD 형식으로 변환
-    if (item.label && item.label.includes("-") && item.label.length >= 10) {
-      formattedLabel = item.label.substring(5, 10).replace("-", "/")
-    }
+      // YYYY-MM-DD 형식의 날짜를 MM/DD 형식으로 변환
+      if (item.label && item.label.includes("-") && item.label.length >= 10) {
+        formattedLabel = item.label.substring(5, 10).replace("-", "/")
+      }
 
-    return {
-      ...item,
-      x: index, // 인덱스 재할당
-      label: formattedLabel,
-    }
-  })
+      return {
+        ...item,
+        x: index, // 인덱스 재할당
+        label: formattedLabel,
+      }
+    })
+  }
+
+  // 바 차트와 라인 차트 데이터 처리
+  const processedBarData = limitToLatest7(data.barChartData)
+  const processedLineData = limitToLatest7(data.lineChartData)
 
   const result = {
     ...data,
-    barChartData: processBarData,
-    lineChartData: processLineData,
+    barChartData: processedBarData,
+    lineChartData: processedLineData,
   }
 
-  console.log("Processed data:", JSON.stringify(result))
+  console.log("Processed data (limited to 7):", JSON.stringify(result))
   return result
 }
 
