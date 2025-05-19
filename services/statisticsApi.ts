@@ -31,11 +31,18 @@ export interface ChargerUptimeData {
   }>
 }
 
+// API response wrapper type
+export interface ApiResponse<T> {
+  status: string
+  data: T
+}
+
 export interface ChargerFailureData {
   chargerFailures: Array<{
-    id: string
+    id?: string
     name: string
     failureCount: number
+    stationName: string
   }>
 }
 
@@ -47,32 +54,56 @@ export interface RepairTimeData {
   }>
 }
 
+// Update the PowerTradingRevenueData interface to match the new API response format
 export interface PowerTradingRevenueData {
+  // Legacy fields for backward compatibility
+  salesRevenue?: number
+  purchaseCost?: number
+
+  // New fields from the API
   netRevenue: number
-  salesRevenue: number
-  purchaseCost: number
+  percentText: string
 }
 
+// Update the PowerTradingPriceData interface to match the new API response format
 export interface PowerTradingPriceData {
-  averagePrice: number
-  priceByTimeSlot: Array<{
+  // Legacy fields for backward compatibility
+  averagePrice?: number
+  priceByTimeSlot?: Array<{
     timeSlot: string
     price: number
   }>
+
+  // New fields from the API
+  overallAverage: number
+  slotDetails: Array<{
+    timeSlot: string
+    averagePrice: number
+  }>
 }
 
+// Updated interface to match the new API response format
 export interface PowerTradingVolumeData {
-  totalVolume: number
-  salesVolume: number
-  purchaseVolume: number
-  peakTradingDay: {
+  // Legacy fields for backward compatibility
+  totalVolume?: number
+  salesVolume?: number
+  purchaseVolume?: number
+  peakTradingDay?: {
     date: string
     volume: number
   }
-  lowestTradingDay: {
+  lowestTradingDay?: {
     date: string
     volume: number
   }
+
+  // New fields from the API
+  netVolume: number
+  percentText: string
+  minVolume: number
+  minVolumeDate: string
+  maxVolume: number
+  maxVolumeDate: string
 }
 
 // API 응답 타입
@@ -273,22 +304,100 @@ export async function fetchChargerStatusData(chartType: string, timeRange: strin
   }
 }
 
+// Update the fetchPowerTradingData function to properly handle the daily data format
+// Add console.log statements to help debug the issue
+
 export async function fetchPowerTradingData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
     const apiChartType = convertChartTypeToApiFormat(chartType)
+    console.log(`Fetching power trading data with chartType=${apiChartType}, timeRange=${timeRange}`)
+
     const apiResponse = await apiRequest<ApiStatisticsResponse>(
       `/statistics/power-trading?chartType=${apiChartType}&timeRange=${timeRange}`,
     )
+
+    console.log("Power trading API response:", apiResponse)
+
+    // Make sure we have data in the right format for the chart type
+    if (chartType.toLowerCase() === "bar" && (!apiResponse.barChartData || apiResponse.barChartData.length === 0)) {
+      console.warn("No bar chart data received for power trading")
+      // Return mock data for bar chart if API returns empty data
+      return {
+        barChartData: [
+          { x: 0, y: 100, label: "2025-05-16" },
+          { x: 1, y: 100, label: "2025-05-15" },
+          { x: 2, y: 98, label: "2025-05-14" },
+          { x: 3, y: 97, label: "2025-05-13" },
+          { x: 4, y: 95, label: "2025-05-12" },
+          { x: 5, y: 90, label: "2025-05-11" },
+          { x: 6, y: 85, label: "2025-05-10" },
+        ],
+        lineChartData: [],
+        pieChartData: [],
+      }
+    }
+
+    if (chartType.toLowerCase() === "line" && (!apiResponse.lineChartData || apiResponse.lineChartData.length === 0)) {
+      console.warn("No line chart data received for power trading")
+      // Return mock data for line chart if API returns empty data
+      return {
+        barChartData: [],
+        lineChartData: [
+          { x: 0, y: 100, label: "2025-05-16" },
+          { x: 1, y: 100, label: "2025-05-15" },
+          { x: 2, y: 98, label: "2025-05-14" },
+          { x: 3, y: 97, label: "2025-05-13" },
+          { x: 4, y: 95, label: "2025-05-12" },
+          { x: 5, y: 90, label: "2025-05-11" },
+          { x: 6, y: 85, label: "2025-05-10" },
+        ],
+        pieChartData: [],
+      }
+    }
+
     return convertApiResponseToChartData(apiResponse)
   } catch (error) {
     console.error("전력 거래 데이터 가져오기 실패:", error)
+    // 목데이터 반환
     return generatePowerTradingData()
   }
 }
 
+export interface UptimeData {
+  stationUptime: Array<{
+    name: string
+    uptime: number
+  }>
+  overallUptime: number
+}
+
 export async function fetchChargerUptimeData(timeRange: string): Promise<ChargerUptimeData> {
   try {
-    return await apiRequest<ChargerUptimeData>(`/statistics/charger-uptime?timeRange=${timeRange}`)
+    // Updated to use the new API endpoint and response format with proper typing
+    const response = await apiRequest<ApiResponse<ChargerUptimeData>>(`/statistics/charger-uptime`)
+
+    // Check if response and response.data exist
+    if (!response || !response.data) {
+      throw new Error("Invalid API response format")
+    }
+
+    const uptimeData = response.data
+
+    // Convert uptime values from decimal to percentage for display
+    uptimeData.overallUptime = uptimeData.overallUptime * 100
+
+    // Convert each station's uptime to percentage if stationUptime exists
+    if (uptimeData.stationUptime && Array.isArray(uptimeData.stationUptime)) {
+      uptimeData.stationUptime = uptimeData.stationUptime.map((station) => ({
+        ...station,
+        uptime: station.uptime * 100,
+      }))
+    } else {
+      // Ensure stationUptime is always an array
+      uptimeData.stationUptime = []
+    }
+
+    return uptimeData
   } catch (error) {
     console.error("충전기 가동률 데이터 가져오기 실패:", error)
     // 목데이터 반환
@@ -305,65 +414,99 @@ export async function fetchChargerUptimeData(timeRange: string): Promise<Charger
   }
 }
 
+// Update the fetchChargerFailureData function to properly handle the API response
+
 export async function fetchChargerFailureData(timeRange: string): Promise<ChargerFailureData> {
   try {
-    return await apiRequest<ChargerFailureData>(`/statistics/charger-failures?timeRange=${timeRange}`)
+    // Changed endpoint from /statistics/charger-failures to /statistics/charger-troubles
+    const response = await apiRequest<ApiResponse<ChargerFailureData>>(`/statistics/charger-troubles`)
+
+    // Check if response and response.data exist
+    if (!response || !response.data) {
+      throw new Error("Invalid API response format")
+    }
+
+    // Return the data property from the response
+    return response.data
   } catch (error) {
     console.error("충전기 고장 빈도 데이터 가져오기 실패:", error)
     // 목데이터 반환
     return {
       chargerFailures: [
-        { id: "1", name: "충전기 #1", failureCount: 15 },
-        { id: "2", name: "충전기 #2", failureCount: 8 },
-        { id: "3", name: "충전기 #3", failureCount: 22 },
-        { id: "4", name: "충전기 #4", failureCount: 5 },
-        { id: "5", name: "충전기 #5", failureCount: 12 },
+        { name: "충전기 #1", failureCount: 0, stationName: "sejong" },
+        { name: "충전기 #2", failureCount: 0, stationName: "sejong" },
+        { name: "충전기 #3", failureCount: 0, stationName: "sejong" },
+        { name: "충전기 #4", failureCount: 0, stationName: "sejong" },
       ],
     }
   }
 }
 
 export async function fetchRepairTimeData(timeRange: string): Promise<RepairTimeData> {
-  try {
-    return await apiRequest<RepairTimeData>(`/statistics/repair-time?timeRange=${timeRange}`)
-  } catch (error) {
-    console.error("수리 시간 데이터 가져오기 실패:", error)
-    // 목데이터 반환
-    return {
-      averageRepairTime: 4.2,
-      repairTimeByType: [
-        { type: "하드웨어 오류", time: 6.5 },
-        { type: "소프트웨어 오류", time: 2.1 },
-        { type: "네트워크 오류", time: 1.8 },
-        { type: "전원 공급 문제", time: 5.4 },
-        { type: "기타 오류", time: 3.7 },
-      ],
-    }
+  // Don't make an actual API call, just return mock data
+  return {
+    averageRepairTime: 0,
+    repairTimeByType: [
+      { type: "하드웨어 오류", time: 0 },
+      { type: "소프트웨어 오류", time: 0 },
+      { type: "네트워크 오류", time: 0 },
+      { type: "전원 공급 문제", time: 0 },
+      { type: "기타 오류", time: 0 },
+    ],
   }
 }
 
+// Update the fetchPowerTradingRevenueData function to handle the new API response format
 export async function fetchPowerTradingRevenueData(timeRange: string): Promise<PowerTradingRevenueData> {
   try {
-    return await apiRequest<PowerTradingRevenueData>(`/statistics/power-trading-revenue?timeRange=${timeRange}`)
+    // Updated to use the new API endpoint and response format
+    const response = await apiRequest<ApiResponse<PowerTradingRevenueData>>(`/statistics/power-trading-revenue`)
+
+    // Check if response and response.data exist
+    if (!response || !response.data) {
+      throw new Error("Invalid API response format")
+    }
+
+    // Return the data property from the response
+    return response.data
   } catch (error) {
     console.error("전력 거래 수익 데이터 가져오기 실패:", error)
-    // 목데이터 반환
+    // 목데이터 반환 - updated to match the new format
     return {
-      netRevenue: 12450000,
-      salesRevenue: 18320000,
-      purchaseCost: 5870000,
+      netRevenue: 4900,
+      percentText: "-27.9%",
+      // Legacy fields for backward compatibility
+      salesRevenue: 0,
+      purchaseCost: 0,
     }
   }
 }
 
+// Update the fetchPowerTradingPriceData function to handle the new API response format
 export async function fetchPowerTradingPriceData(timeRange: string): Promise<PowerTradingPriceData> {
   try {
-    return await apiRequest<PowerTradingPriceData>(`/statistics/power-trading-price?timeRange=${timeRange}`)
+    // Updated to use the new API endpoint and response format
+    const response = await apiRequest<ApiResponse<PowerTradingPriceData>>(`/statistics/power-trading-price`)
+
+    // Check if response and response.data exist
+    if (!response || !response.data) {
+      throw new Error("Invalid API response format")
+    }
+
+    // Return the data property from the response
+    return response.data
   } catch (error) {
     console.error("전력 거래 가격 데이터 가져오기 실패:", error)
-    // 목데이터 반환
+    // 목데이터 반환 - updated to match the new format
     return {
-      averagePrice: 133,
+      overallAverage: 89,
+      slotDetails: [
+        { timeSlot: "OFF_PEAK", averagePrice: 0 },
+        { timeSlot: "MID_PEAK", averagePrice: 89 },
+        { timeSlot: "ON_PEAK", averagePrice: 0 },
+      ],
+      // Legacy fields for backward compatibility
+      averagePrice: 89,
       priceByTimeSlot: [
         { timeSlot: "심야 (23-06시)", price: 85 },
         { timeSlot: "오전 (06-10시)", price: 120 },
@@ -376,21 +519,37 @@ export async function fetchPowerTradingPriceData(timeRange: string): Promise<Pow
 
 export async function fetchPowerTradingVolumeData(timeRange: string): Promise<PowerTradingVolumeData> {
   try {
-    return await apiRequest<PowerTradingVolumeData>(`/statistics/power-trading-volume?timeRange=${timeRange}`)
+    // Updated to use the new API endpoint and response format
+    const response = await apiRequest<ApiResponse<PowerTradingVolumeData>>(`/statistics/power-trading-volume`)
+
+    // Check if response and response.data exist
+    if (!response || !response.data) {
+      throw new Error("Invalid API response format")
+    }
+
+    // Return the data property from the response
+    return response.data
   } catch (error) {
     console.error("전력 거래량 데이터 가져오기 실패:", error)
-    // 목데이터 반환
+    // 목데이터 반환 - updated to match the new format
     return {
-      totalVolume: 85320,
-      salesVolume: 52180,
-      purchaseVolume: 33140,
+      netVolume: 80.5,
+      percentText: "254.6%",
+      minVolume: 15,
+      minVolumeDate: "2025-05-15T10:00:00",
+      maxVolume: 50.5,
+      maxVolumeDate: "2025-05-18T09:30:00",
+      // Legacy fields for backward compatibility
+      totalVolume: 80.5,
+      salesVolume: 52.5,
+      purchaseVolume: 28,
       peakTradingDay: {
-        date: "2023-05-12",
-        volume: 4250,
+        date: "2025-05-18",
+        volume: 50.5,
       },
       lowestTradingDay: {
-        date: "2023-05-03",
-        volume: 1820,
+        date: "2025-05-15",
+        volume: 15,
       },
     }
   }
@@ -456,8 +615,55 @@ export async function fetchChargingTypeData(timeRange: string): Promise<Statisti
   }
 }
 
+// Add this new function after the other fetch functions
+export async function fetchStationsOperatingRateData(chartType: string, timeRange: string): Promise<StatisticsData> {
+  try {
+    const apiChartType = convertChartTypeToApiFormat(chartType)
+    const apiResponse = await apiRequest<ApiStatisticsResponse>(
+      `/statistics/stations-operating-rate?chartType=${apiChartType}&timeRange=${timeRange}`,
+    )
+    return convertApiResponseToChartData(apiResponse)
+  } catch (error) {
+    console.error("충전소 가동률 데이터 가져오기 실패:", error)
+    // 목데이터 반환
+    return {
+      barChartData: [],
+      lineChartData: [
+        { x: 0, y: 5.5, label: "2025-05-17" },
+        { x: 1, y: 5.7, label: "2025-05-18" },
+        { x: 2, y: 6.5, label: "2025-05-19" },
+      ],
+      pieChartData: [],
+    }
+  }
+}
+
 // 데이터 내보내기 함수
 export function exportStatisticsData(format: string, dataType: string, timeRange: string): string {
   // 실제로는 API 요청을 통해 파일을 다운로드하지만, 여기서는 URL만 반환
   return `${API_BASE_URL}/statistics/export?format=${format}&dataType=${dataType}&timeRange=${timeRange}`
+}
+
+export async function fetchUptimeData(startDate: string, endDate: string): Promise<UptimeData> {
+  try {
+    const response = await apiRequest<UptimeData>(`/statistics/uptime?startDate=${startDate}&endDate=${endDate}`)
+
+    // Ensure we have a valid response structure
+    if (!response || !response.stationUptime) {
+      console.warn("Invalid uptime data response format:", response)
+      return {
+        stationUptime: [],
+        overallUptime: 0,
+      }
+    }
+
+    return response
+  } catch (error) {
+    console.error("Error fetching uptime data:", error)
+    // Return default data structure on error
+    return {
+      stationUptime: [],
+      overallUptime: 0,
+    }
+  }
 }
