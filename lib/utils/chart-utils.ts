@@ -39,8 +39,10 @@ export function aggregateDataByPeriod(
 ): { label: string; value: number }[] {
   if (!data || data.length === 0) return []
 
-  // 이미 일별 데이터인 경우 그대로 반환
-  if (period === "day") return data
+  // 일별 데이터인 경우 그대로 반환 (필터링 없음)
+  if (period === "day") {
+    return [...data].sort((a, b) => a.label.localeCompare(b.label))
+  }
 
   const aggregated: Record<string, number> = {}
 
@@ -96,7 +98,10 @@ function formatPeriodLabel(label: string, period: "day" | "week" | "month" | "ye
   switch (period) {
     case "day":
       // YYYY-MM-DD -> MM/DD
-      return label.substring(5).replace("-", "/")
+      if (label.length >= 10) {
+        return label.substring(5, 10).replace("-", "/")
+      }
+      return label
     case "week":
       // YYYY-WNN -> YYYY년 NN주차
       const [year, week] = label.split("-W")

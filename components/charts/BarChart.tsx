@@ -72,8 +72,10 @@ export function BarChart({ data, color = "#4CAF50" }: BarChartProps) {
               color: "#888",
               maxRotation: 45, // 라벨이 많을 때 회전
               minRotation: 0,
-              autoSkip: true, // 라벨이 많을 때 자동으로 일부 건너뛰기
-              autoSkipPadding: 10,
+              autoSkip: false, // 모든 라벨 표시
+              font: {
+                size: 10, // 폰트 크기 줄이기
+              },
             },
           },
           y: {

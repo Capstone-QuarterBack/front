@@ -83,6 +83,11 @@ export function LineChart({ data, color = "#2196F3", yAxisUnit = "" }: LineChart
             },
             ticks: {
               color: "#888",
+              autoSkip: false, // 모든 라벨 표시
+              font: {
+                size: 10, // 폰트 크기 줄이기
+              },
+              maxRotation: 45, // 라벨이 많을 때 회전
             },
           },
           y: {

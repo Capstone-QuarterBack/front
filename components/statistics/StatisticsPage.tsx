@@ -39,7 +39,8 @@ import {
 } from "@/services/statisticsApi"
 import { aggregateStatisticsData } from "@/lib/utils/chart-utils"
 
-// Update the filterLastSevenDays function to better handle the date formats and debug the issue
+// filterLastSevenDays 함수를 완전히 다시 작성합니다.
+// 기존 함수를 아래 코드로 교체해주세요:
 
 function filterLastSevenDays(data: StatisticsData | null): StatisticsData | null {
   if (!data) {
@@ -47,112 +48,46 @@ function filterLastSevenDays(data: StatisticsData | null): StatisticsData | null
     return data
   }
 
-  if (!data.barChartData || data.barChartData.length === 0) {
-    console.warn("No bar chart data to filter")
-  }
+  console.log("Original data:", JSON.stringify(data))
 
-  if (!data.lineChartData || data.lineChartData.length === 0) {
-    console.warn("No line chart data to filter")
-  }
+  // 모든 데이터를 유지하되, 날짜 형식만 변환합니다
+  const processBarData = data.barChartData.map((item, index) => {
+    let formattedLabel = item.label
 
-  // Log the data we're trying to filter
-  console.log("Data before filtering:", JSON.stringify(data))
-
-  // 현재 날짜 가져오기
-  const today = new Date()
-  const sevenDaysAgo = new Date(today)
-  sevenDaysAgo.setDate(today.getDate() - 6) // 오늘 포함 7일이므로 6일 전으로 설정
-
-  // Helper function to extract date from different formats
-  const extractDateFromLabel = (label: string): Date | null => {
-    if (!label) return null
-
-    try {
-      // Handle format: "YYYY-MM-DDThh:mm"
-      if (label.includes("T")) {
-        return new Date(label)
-      }
-
-      // Handle format: "YYYY-MM-DD"
-      if (label.includes("-") && !label.includes("T")) {
-        return new Date(label)
-      }
-
-      // Handle format: "MM/DD"
-      if (label.includes("/")) {
-        const [month, day] = label.split("/").map(Number)
-        const date = new Date(today.getFullYear(), month - 1, day)
-        return date
-      }
-    } catch (e) {
-      console.error("Error parsing date:", label, e)
+    // YYYY-MM-DD 형식의 날짜를 MM/DD 형식으로 변환
+    if (item.label && item.label.includes("-") && item.label.length >= 10) {
+      formattedLabel = item.label.substring(5, 10).replace("-", "/")
     }
 
-    return null
-  }
-
-  // Process bar chart data if it exists
-  let filteredBarData = data.barChartData || []
-  if (filteredBarData.length > 0) {
-    filteredBarData = filteredBarData.filter((item) => {
-      if (!item.label) return true
-
-      const itemDate = extractDateFromLabel(item.label)
-      if (!itemDate) return true
-
-      return itemDate >= sevenDaysAgo && itemDate <= today
-    })
-
-    // Sort by date
-    filteredBarData.sort((a, b) => {
-      const dateA = extractDateFromLabel(a.label || "") || new Date(0)
-      const dateB = extractDateFromLabel(b.label || "") || new Date(0)
-      return dateA.getTime() - dateB.getTime()
-    })
-
-    // Reassign x values to ensure sequential ordering
-    filteredBarData = filteredBarData.map((item, index) => ({
+    return {
       ...item,
-      x: index,
-    }))
-  }
+      x: index, // 인덱스 재할당
+      label: formattedLabel,
+    }
+  })
 
-  // Process line chart data if it exists
-  let filteredLineData = data.lineChartData || []
-  if (filteredLineData.length > 0) {
-    filteredLineData = filteredLineData.filter((item) => {
-      if (!item.label) return true
+  const processLineData = data.lineChartData.map((item, index) => {
+    let formattedLabel = item.label
 
-      const itemDate = extractDateFromLabel(item.label)
-      if (!itemDate) return true
+    // YYYY-MM-DD 형식의 날짜를 MM/DD 형식으로 변환
+    if (item.label && item.label.includes("-") && item.label.length >= 10) {
+      formattedLabel = item.label.substring(5, 10).replace("-", "/")
+    }
 
-      return itemDate >= sevenDaysAgo && itemDate <= today
-    })
-
-    // Sort by date
-    filteredLineData.sort((a, b) => {
-      const dateA = extractDateFromLabel(a.label || "") || new Date(0)
-      const dateB = extractDateFromLabel(b.label || "") || new Date(0)
-      return dateA.getTime() - dateB.getTime()
-    })
-
-    // Reassign x values to ensure sequential ordering
-    filteredLineData = filteredLineData.map((item, index) => ({
+    return {
       ...item,
-      x: index,
-    }))
-  }
+      x: index, // 인덱스 재할당
+      label: formattedLabel,
+    }
+  })
 
-  // Create the result
   const result = {
     ...data,
-    barChartData: filteredBarData,
-    lineChartData: filteredLineData,
+    barChartData: processBarData,
+    lineChartData: processLineData,
   }
 
-  // Log the filtered data
-  console.log("Data after filtering:", JSON.stringify(result))
-
+  console.log("Processed data:", JSON.stringify(result))
   return result
 }
 
@@ -289,14 +224,13 @@ export default function StatisticsPage() {
       )
 
       // 일간 데이터인 경우 최근 7일만 표시
-      if (timeRange === "day") {
-        processedCostData = filterLastSevenDays(processedCostData)
-        processedVolumeData = filterLastSevenDays(processedVolumeData)
-        processedInfoData = filterLastSevenDays(processedInfoData)
-        processedStatusData = filterLastSevenDays(processedStatusData)
-        processedTradingData = filterLastSevenDays(processedTradingData)
-        processedOperatingRateData = filterLastSevenDays(processedOperatingRateData)
-      }
+      // 모든 데이터에 대해 날짜 형식 변환 적용
+      processedCostData = filterLastSevenDays(processedCostData)
+      processedVolumeData = filterLastSevenDays(processedVolumeData)
+      processedInfoData = filterLastSevenDays(processedInfoData)
+      processedStatusData = filterLastSevenDays(processedStatusData)
+      processedTradingData = filterLastSevenDays(processedTradingData)
+      processedOperatingRateData = filterLastSevenDays(processedOperatingRateData)
 
       setAggregatedCostData(processedCostData)
       setAggregatedVolumeData(processedVolumeData)
@@ -393,13 +327,12 @@ export default function StatisticsPage() {
         )
 
         // 일간 데이터인 경우 최근 7일만 표시
-        if (timeRange === "day") {
-          processedCostData = filterLastSevenDays(processedCostData)
-          processedVolumeData = filterLastSevenDays(processedVolumeData)
-          processedInfoData = filterLastSevenDays(processedInfoData)
-          processedStatusData = filterLastSevenDays(processedStatusData)
-          processedOperatingRateData = filterLastSevenDays(processedOperatingRateData)
-        }
+        // 모든 데이터에 대해 날짜 형식 변환 적용
+        processedCostData = filterLastSevenDays(processedCostData)
+        processedVolumeData = filterLastSevenDays(processedVolumeData)
+        processedInfoData = filterLastSevenDays(processedInfoData)
+        processedStatusData = filterLastSevenDays(processedStatusData)
+        processedOperatingRateData = filterLastSevenDays(processedOperatingRateData)
 
         setAggregatedCostData(processedCostData)
         setAggregatedVolumeData(processedVolumeData)
@@ -450,9 +383,8 @@ export default function StatisticsPage() {
         }
 
         // Filter if needed
-        if (timeRange === "day") {
-          processedTradingData = filterLastSevenDays(processedTradingData)
-        }
+        // 항상 날짜 형식 변환 적용
+        processedTradingData = filterLastSevenDays(processedTradingData)
 
         setAggregatedTradingData(processedTradingData)
       } catch (error) {
