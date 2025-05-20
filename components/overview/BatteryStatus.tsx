@@ -135,7 +135,9 @@ export function BatteryStatus({ data, stationId }: BatteryStatusProps) {
               dataKey="count"
               stroke="#ccc"
               strokeWidth={2}
-              dot={({ cx, cy, payload }) => <circle cx={cx} cy={cy} r={4} fill={payload.isPeak ? "#f472b6" : "#999"} />}
+              dot={({ cx, cy, payload, index }) => (
+                <circle key={`dot-${index}`} cx={cx} cy={cy} r={4} fill={payload.isPeak ? "#f472b6" : "#999"} />
+              )}
               isAnimationActive={false}
             />
           </LineChart>
