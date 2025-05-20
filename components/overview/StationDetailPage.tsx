@@ -132,7 +132,7 @@ export default function StationDetailPage() {
     refreshData()
 
     // Set up interval
-    const refreshInterval = setInterval(refreshData, 5000)
+    const refreshInterval = setInterval(refreshData, 1000)
 
     // Clean up interval on unmount or when station changes
     return () => {
