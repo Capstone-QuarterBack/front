@@ -9,7 +9,7 @@ import { LineChart } from "@/components/charts/LineChart"
 import { PieChart } from "@/components/charts/PieChart"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Download } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import type { StatisticsData } from "@/types/chart"
 import {
   fetchStatisticsSummary,
@@ -595,10 +595,6 @@ export default function StatisticsPage() {
               </Button>
             </div>
           )}
-          <Button variant="outline" size="sm" onClick={() => handleExportData("excel")}>
-            <Download className="h-4 w-4 mr-2" />
-            내보내기
-          </Button>
         </div>
       </div>
 
@@ -643,7 +639,7 @@ export default function StatisticsPage() {
                         : timeRange === "month"
                           ? "월별"
                           : "연별"}{" "}
-                    충전량 (kWh)
+                    충전량 (Wh)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
@@ -718,7 +714,7 @@ export default function StatisticsPage() {
                         : timeRange === "month"
                           ? "월별"
                           : "연별"}{" "}
-                    전력 거래량
+                    전력 거래량 (Wh)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
@@ -735,7 +731,7 @@ export default function StatisticsPage() {
             {stationPriceData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>충전소별 비용 분포</CardTitle>
+                  <CardTitle>충전소별 비용 분포 (KRW)</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
                   <PieChart data={stationPriceData.pieChartData} />
@@ -746,7 +742,7 @@ export default function StatisticsPage() {
             {/* 시간대별 충전량 */}
             <Card className="col-span-1 row-span-1 bg-black text-white border-0">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-bold">시간대별 충전량</CardTitle>
+                <CardTitle className="text-lg font-bold">시간대별 충전량 (Wh)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
@@ -758,7 +754,7 @@ export default function StatisticsPage() {
             {chargingTypeData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>충전 결과 분포</CardTitle>
+                  <CardTitle>충전 결과 분포 (%)</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
                   <PieChart data={chargingTypeData.pieChartData} />
@@ -769,7 +765,7 @@ export default function StatisticsPage() {
             {aggregatedStatusData && (
               <Card>
                 <CardHeader>
-                  <CardTitle>충전기 상태 분포</CardTitle>
+                  <CardTitle>충전기 상태 분포 (개)</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
                   <PieChart data={aggregatedStatusData.pieChartData} />
@@ -819,7 +815,7 @@ export default function StatisticsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={aggregatedVolumeData.lineChartData} color="#2196F3" yAxisUnit="kWh" />
+                  <LineChart data={aggregatedVolumeData.lineChartData} color="#2196F3" yAxisUnit="Wh" />
                 </CardContent>
               </Card>
             )}
@@ -876,11 +872,11 @@ export default function StatisticsPage() {
                         : timeRange === "month"
                           ? "월별"
                           : "연별"}{" "}
-                    전력 거래량
+                    전력 거래량 (Wh)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <LineChart data={aggregatedTradingData.lineChartData} color="#9C27B0" yAxisUnit="kWh" />
+                  <LineChart data={aggregatedTradingData.lineChartData} color="#9C27B0" yAxisUnit="Wh" />
                 </CardContent>
               </Card>
             )}
@@ -897,7 +893,7 @@ export default function StatisticsPage() {
                 <CardTitle className="text-sm font-medium">총 충전량</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{summaryData.totalChargingVolume.toLocaleString()} kWh</div>
+                <div className="text-2xl font-bold">{summaryData.totalChargingVolume.toLocaleString()} Wh</div>
                 <p className="text-xs text-muted-foreground">
                   전월 대비 {summaryData.comparisonWithPrevious.volumeChangePercent > 0 ? "+" : ""}
                   {summaryData.comparisonWithPrevious.volumeChangePercent}%
@@ -923,7 +919,7 @@ export default function StatisticsPage() {
                 <CardTitle className="text-sm font-medium">총 매출</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">₩{summaryData.totalRevenue.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{summaryData.totalRevenue.toLocaleString()} KRW</div>
                 <p className="text-xs text-muted-foreground">
                   전월 대비 {summaryData.comparisonWithPrevious.revenueChangePercent > 0 ? "+" : ""}
                   {summaryData.comparisonWithPrevious.revenueChangePercent}%
@@ -1044,7 +1040,7 @@ export default function StatisticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-green-500 mb-4">
-                    ₩{tradingRevenueData.netRevenue.toLocaleString()}
+                    {tradingRevenueData.netRevenue.toLocaleString()} KRW
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
@@ -1060,7 +1056,7 @@ export default function StatisticsPage() {
                       <div className="flex justify-between items-center">
                         <span>전력 판매 수익</span>
                         <span className="font-medium text-green-500">
-                          ₩{tradingRevenueData.salesRevenue.toLocaleString()}
+                          {tradingRevenueData.salesRevenue.toLocaleString()} KRW
                         </span>
                       </div>
                     )}
@@ -1068,7 +1064,7 @@ export default function StatisticsPage() {
                       <div className="flex justify-between items-center">
                         <span>전력 구매 비용</span>
                         <span className="font-medium text-red-500">
-                          ₩{tradingRevenueData.purchaseCost.toLocaleString()}
+                          {tradingRevenueData.purchaseCost.toLocaleString()} KRW
                         </span>
                       </div>
                     )}
@@ -1089,7 +1085,7 @@ export default function StatisticsPage() {
                       tradingPriceData.slotDetails.map((slot, index) => (
                         <div key={index} className="flex justify-between items-center">
                           <span>{translateTimeSlot(slot.timeSlot)}</span>
-                          <span className="font-medium">₩{slot.averagePrice}/kWh</span>
+                          <span className="font-medium">{slot.averagePrice} KRW/Wh</span>
                         </div>
                       ))}
 
@@ -1099,7 +1095,7 @@ export default function StatisticsPage() {
                       tradingPriceData.priceByTimeSlot.map((slot, index) => (
                         <div key={index} className="flex justify-between items-center">
                           <span>{slot.timeSlot}</span>
-                          <span className="font-medium">₩{slot.price}/kWh</span>
+                          <span className="font-medium">{slot.price} KRW/Wh</span>
                         </div>
                       ))}
 
@@ -1107,7 +1103,7 @@ export default function StatisticsPage() {
                       <div className="flex justify-between items-center">
                         <span className="font-medium">평균 거래 가격</span>
                         <span className="font-bold">
-                          ₩{tradingPriceData.overallAverage || tradingPriceData.averagePrice || 0}/kWh
+                          {tradingPriceData.overallAverage || tradingPriceData.averagePrice || 0} KRW/Wh
                         </span>
                       </div>
                     </div>
@@ -1121,7 +1117,7 @@ export default function StatisticsPage() {
                 <CardTitle>전력 거래량</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-4">{tradingVolumeData.netVolume.toLocaleString()} kWh</div>
+                <div className="text-3xl font-bold mb-4">{tradingVolumeData.netVolume.toLocaleString()} Wh</div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span>증감률</span>
@@ -1132,14 +1128,14 @@ export default function StatisticsPage() {
                       <span>최대 거래량</span>
                       <span className="font-medium">
                         {new Date(tradingVolumeData.maxVolumeDate).toLocaleDateString()} (
-                        {tradingVolumeData.maxVolume.toLocaleString()} kWh)
+                        {tradingVolumeData.maxVolume.toLocaleString()} Wh)
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>최소 거래량</span>
                       <span className="font-medium">
                         {new Date(tradingVolumeData.minVolumeDate).toLocaleDateString()} (
-                        {tradingVolumeData.minVolume.toLocaleString()} kWh)
+                        {tradingVolumeData.minVolume.toLocaleString()} Wh)
                       </span>
                     </div>
                   </div>

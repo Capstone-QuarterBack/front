@@ -54,7 +54,7 @@ export function TransactionSummary({ startDate, endDate, stationName }: Transact
         {isLoading ? (
           <div className={loadingStyles.smallSpinner}></div>
         ) : (
-          <span className="text-2xl font-bold">{totalPrice.toLocaleString()} (KRW)</span>
+          <span className="text-2xl font-bold">{totalPrice.toLocaleString()} KRW</span>
         )}
       </Card>
 
@@ -64,7 +64,7 @@ export function TransactionSummary({ startDate, endDate, stationName }: Transact
         {isLoading ? (
           <div className={loadingStyles.smallSpinner}></div>
         ) : (
-          <span className="text-2xl font-bold">{totalDischargeAmount.toLocaleString()} (kWh)</span>
+          <span className="text-2xl font-bold">{totalDischargeAmount.toLocaleString()} (Wh)</span>
         )}
       </Card>
     </div>

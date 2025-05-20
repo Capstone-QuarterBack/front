@@ -16,6 +16,7 @@ export default function StationDetailPage() {
   const [chargerInfoMap, setChargerInfoMap] = useState<Map<number, ChargerInfoResponse>>(new Map())
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
 
   // URL에서 충전소 데이터 가져오기
   useEffect(() => {
@@ -59,18 +60,6 @@ export default function StationDetailPage() {
           setChargerInfoMap(infoMap)
         }
 
-        // 혼잡도 데이터가 있으면 설정 (필요한 경우 사용)
-        if (decodedData.congestionData) {
-          console.log("혼잡도 데이터 발견:", decodedData.congestionData)
-          // 필요한 경우 상태 변수 추가하여 저장
-        }
-
-        // 충전 이력 데이터가 있으면 설정 (필요한 경우 사용)
-        if (decodedData.chargingHistory) {
-          console.log("충전 이력 데이터 발견:", decodedData.chargingHistory)
-          // 필요한 경우 상태 변수 추가하여 저장
-        }
-
         // 이미 데이터가 있으면 로딩 상태 해제
         if (decodedData.chargerStatuses && decodedData.chargerInfoMap) {
           setLoading(false)
@@ -84,6 +73,73 @@ export default function StationDetailPage() {
       setError(`충전소 데이터를 불러오는 중 오류가 발생했습니다: ${(error as Error).message}`)
     }
   }, [])
+
+  // Add a separate useEffect for the refresh interval
+  useEffect(() => {
+    // Only set up the refresh interval if we have a station
+    if (!station) return
+
+    console.log("Setting up refresh interval for station:", station.stationId)
+
+    // Function to refresh data
+    const refreshData = async () => {
+      console.log("자동 새로고침 실행 중...")
+      setLastRefreshed(new Date())
+
+      try {
+        // Refresh charger statuses
+        const statuses = await fetchChargerStatuses(station.stationId)
+        console.log(`충전소 ${station.stationId}의 충전기 상태 정보 새로고침 완료:`, statuses)
+        setChargerStatuses(statuses)
+
+        // Refresh charger details
+        const infoMap = new Map<number, ChargerInfoResponse>()
+
+        // Process each charger status
+        for (const status of statuses) {
+          try {
+            // Determine status type
+            let statusType: "available" | "occupied" | "unavailable"
+
+            switch (status.chargerStatus) {
+              case "AVAILABLE":
+                statusType = "available"
+                break
+              case "OCCUPIED":
+                statusType = "occupied"
+                break
+              case "UNAVAILABLE":
+              default:
+                statusType = "unavailable"
+                break
+            }
+
+            // Fetch charger info
+            const info = await fetchChargerInfo(station.stationId, status.evseId, statusType)
+            infoMap.set(status.evseId, info)
+          } catch (fetchError) {
+            console.error(`충전기 ${status.evseId} 정보 새로고침 실패:`, fetchError)
+          }
+        }
+
+        setChargerInfoMap(infoMap)
+      } catch (error) {
+        console.error("데이터 새로고침 오류:", error)
+      }
+    }
+
+    // Initial refresh
+    refreshData()
+
+    // Set up interval
+    const refreshInterval = setInterval(refreshData, 5000)
+
+    // Clean up interval on unmount or when station changes
+    return () => {
+      clearInterval(refreshInterval)
+      console.log("자동 새로고침 타이머 정리됨")
+    }
+  }, [station]) // Only re-run this effect if station changes
 
   // 충전소 정보가 있으면 충전기 상태 정보 가져오기
   useEffect(() => {
@@ -211,6 +267,9 @@ export default function StationDetailPage() {
         <div className="text-center p-4 border-b border-zinc-700 mb-4">
           <h2 className="text-2xl font-bold">{station.stationName}</h2>
           <p className="text-sm text-zinc-400">충전소 ID: {station.stationId}</p>
+        </div>
+        <div className="text-xs text-zinc-500 text-right mb-2">
+          마지막 업데이트: {lastRefreshed.toLocaleTimeString()}
         </div>
 
         {/* 콘텐츠 */}

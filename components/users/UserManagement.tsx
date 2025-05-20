@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Search, FileSpreadsheet } from "lucide-react"
+import { Search } from "lucide-react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -299,10 +299,6 @@ export default function UserManagement() {
                       totalPages={totalPages}
                       onPageChange={handlePageChange}
                     />
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <FileSpreadsheet className="h-4 w-4" />
-                      <span>엑셀 다운로드</span>
-                    </Button>
                   </div>
                 </div>
               </>

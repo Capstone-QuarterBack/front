@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -22,6 +22,7 @@ export default function OcppLiveMonitor() {
   const [selectedMessage, setSelectedMessage] = useState<OcppWebSocketMessage | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [directionFilter, setDirectionFilter] = useState<string>("all")
+  const [autoReconnect, setAutoReconnect] = useState(true)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const wsServiceRef = useRef<OcppWebSocketService | null>(null)
@@ -32,58 +33,63 @@ export default function OcppLiveMonitor() {
     return msg.direction === directionFilter
   })
 
-  useEffect(() => {
-    // WebSocket 서비스 인스턴스 생성
-    wsServiceRef.current = new OcppWebSocketService()
-
-    // 컴포넌트 언마운트 시 연결 종료
-    return () => {
-      if (wsServiceRef.current) {
-        wsServiceRef.current.disconnect()
-      }
+  // 이벤트 핸들러 함수들을 useCallback으로 메모이제이션
+  const handleConnectionChange = useCallback((connected: boolean) => {
+    setIsConnected(connected)
+    setIsConnecting(false)
+    if (connected) {
+      setConnectionError(null)
     }
   }, [])
 
+  const handleConnectionError = useCallback((error: string) => {
+    setConnectionError(error)
+    setIsConnecting(false)
+    setIsConnected(false)
+  }, [])
+
+  // 메시지 업데이트 핸들러 - 전체 메시지 목록을 받아서 상태 업데이트
+  const handleMessagesUpdate = useCallback((allMessages: OcppWebSocketMessage[]) => {
+    setMessages(allMessages)
+  }, [])
+
+  // 초기화 및 정리
   useEffect(() => {
-    if (!wsServiceRef.current) return
+    // 싱글톤 인스턴스 사용
+    wsServiceRef.current = OcppWebSocketService.getInstance()
 
-    // 연결 상태 변경 이벤트 핸들러
-    const handleConnectionChange = (connected: boolean) => {
-      setIsConnected(connected)
-      setIsConnecting(false)
-      if (connected) {
-        setConnectionError(null)
-      }
+    // 자동 재연결 설정
+    if (wsServiceRef.current) {
+      wsServiceRef.current.setAutoReconnect(autoReconnect)
     }
 
-    // 연결 오류 이벤트 핸들러
-    const handleConnectionError = (error: string) => {
-      setConnectionError(error)
-      setIsConnecting(false)
-      setIsConnected(false)
+    // 컴포넌트 마운트 시 연결 상태 확인 및 업데이트
+    if (wsServiceRef.current && wsServiceRef.current.isConnected()) {
+      setIsConnected(true)
     }
 
-    // 메시지 수신 이벤트 핸들러
-    const handleMessage = (message: OcppWebSocketMessage) => {
-      if (!isPaused) {
-        setMessages((prev) => [...prev, message])
-      }
+    // 일시정지 상태 동기화
+    if (wsServiceRef.current) {
+      setIsPaused(wsServiceRef.current.isPaused())
     }
 
     // 이벤트 리스너 등록
-    wsServiceRef.current.onConnectionChange(handleConnectionChange)
-    wsServiceRef.current.onConnectionError(handleConnectionError)
-    wsServiceRef.current.onMessage(handleMessage)
+    if (wsServiceRef.current) {
+      wsServiceRef.current.onConnectionChange(handleConnectionChange)
+      wsServiceRef.current.onConnectionError(handleConnectionError)
+      wsServiceRef.current.onMessagesUpdate(handleMessagesUpdate)
+    }
 
-    // 이벤트 리스너 정리
+    // 컴포넌트 언마운트 시 이벤트 리스너만 제거 (연결은 유지)
     return () => {
       if (wsServiceRef.current) {
+        // 이벤트 리스너만 제거하고 연결은 유지
         wsServiceRef.current.offConnectionChange(handleConnectionChange)
         wsServiceRef.current.offConnectionError(handleConnectionError)
-        wsServiceRef.current.offMessage(handleMessage)
+        wsServiceRef.current.offMessagesUpdate(handleMessagesUpdate)
       }
     }
-  }, [isPaused])
+  }, [handleConnectionChange, handleConnectionError, handleMessagesUpdate, autoReconnect])
 
   // 자동 스크롤
   useEffect(() => {
@@ -107,7 +113,24 @@ export default function OcppLiveMonitor() {
   }
 
   const handleClearMessages = () => {
-    setMessages([])
+    if (wsServiceRef.current) {
+      wsServiceRef.current.clearMessages()
+    }
+  }
+
+  const handleToggleAutoReconnect = (checked: boolean) => {
+    setAutoReconnect(checked)
+    if (wsServiceRef.current) {
+      wsServiceRef.current.setAutoReconnect(checked)
+    }
+  }
+
+  const handleTogglePause = () => {
+    const newPausedState = !isPaused
+    setIsPaused(newPausedState)
+    if (wsServiceRef.current) {
+      wsServiceRef.current.setPaused(newPausedState)
+    }
   }
 
   // 메시지 클릭 핸들러 수정
@@ -288,7 +311,12 @@ export default function OcppLiveMonitor() {
             {getConnectionStatusBadge()}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch id="auto-reconnect" checked={autoReconnect} onCheckedChange={handleToggleAutoReconnect} />
+              <Label htmlFor="auto-reconnect">자동 재연결</Label>
+            </div>
+
             {!isConnected ? (
               <Button onClick={handleConnect} disabled={isConnecting} className="bg-blue-600 hover:bg-blue-700">
                 <RefreshCw className="mr-2 h-4 w-4" />
@@ -335,7 +363,7 @@ export default function OcppLiveMonitor() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setIsPaused(!isPaused)}>
+            <Button variant="outline" onClick={handleTogglePause}>
               {isPaused ? (
                 <>
                   <Play className="mr-2 h-4 w-4" />
@@ -365,7 +393,7 @@ export default function OcppLiveMonitor() {
           ) : (
             filteredMessages.map((msg, index) => (
               <div
-                key={index}
+                key={msg.id} // 고유 ID로 변경
                 className="p-3 mb-2 rounded hover:bg-zinc-800 cursor-pointer border border-zinc-800"
                 onClick={() => handleMessageClick(msg)}
               >

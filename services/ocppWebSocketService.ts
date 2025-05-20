@@ -1,4 +1,7 @@
-// WebSocket 서비스 타입 정의
+// 파일 상단에 apiConfig 임포트 추가
+import { WEBSOCKET_URL } from "./apiConfig"
+
+// WebSocket ���비스 타입 정의
 export interface OcppWebSocketMessage {
   id: string
   messageId: string
@@ -13,16 +16,56 @@ export interface OcppWebSocketMessage {
   messageType?: string | number
 }
 
+// 싱글톤 인스턴스를 저장할 변수
+let instance: OcppWebSocketService | null = null
+
+// 전역 메시지 저장소
+let globalMessages: OcppWebSocketMessage[] = []
+let isPaused = false
+
 export class OcppWebSocketService {
   private socket: WebSocket | null = null
   private url: string
   private messageListeners: ((message: OcppWebSocketMessage) => void)[] = []
+  private messagesUpdateListeners: ((messages: OcppWebSocketMessage[]) => void)[] = []
   private connectionChangeListeners: ((connected: boolean) => void)[] = []
   private connectionErrorListeners: ((error: string) => void)[] = []
+  private autoReconnect = true
+  private reconnectTimer: any = null
+  private reconnectInterval = 5000 // 5초마다 재연결 시도
 
   constructor(url?: string) {
-    // Use the provided URL or the fixed localhost URL
-    this.url = url || "ws://13.209.119.253:8080/react"
+    // Use the provided URL or the URL from apiConfig
+    this.url = url || WEBSOCKET_URL
+  }
+
+  // 싱글톤 인스턴스 가져오기
+  static getInstance(url?: string): OcppWebSocketService {
+    if (!instance) {
+      instance = new OcppWebSocketService(url)
+    }
+    return instance
+  }
+
+  // 일시정지 상태 설정
+  setPaused(paused: boolean): void {
+    isPaused = paused
+  }
+
+  // 일시정지 상태 가져오기
+  isPaused(): boolean {
+    return isPaused
+  }
+
+  // 모든 메시지 가져오기
+  getAllMessages(): OcppWebSocketMessage[] {
+    return [...globalMessages]
+  }
+
+  // 메시지 지우기
+  clearMessages(): void {
+    globalMessages = []
+    this.notifyMessagesUpdateListeners(globalMessages)
   }
 
   // WebSocket 연결
@@ -39,14 +82,27 @@ export class OcppWebSocketService {
 
       this.socket.onopen = () => {
         this.notifyConnectionChange(true)
+        // 연결 성공 시 재연결 타이머 초기화
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer)
+          this.reconnectTimer = null
+        }
       }
 
       this.socket.onclose = () => {
         this.notifyConnectionChange(false)
+        // 자동 재연결이 활성화된 경우 재연결 시도
+        if (this.autoReconnect) {
+          this.scheduleReconnect()
+        }
       }
 
       this.socket.onerror = (event) => {
         this.notifyConnectionError("WebSocket 연결 오류가 발생했습니다.")
+        // 오류 발생 시 재연결 시도
+        if (this.autoReconnect) {
+          this.scheduleReconnect()
+        }
       }
 
       this.socket.onmessage = (event) => {
@@ -70,7 +126,17 @@ export class OcppWebSocketService {
           // 메시지 정보 추출
           const message = this.parseOcppMessage(data, parsedData)
 
-          this.notifyMessageListeners(message)
+          // 일시정지 상태가 아닐 때만 메시지 추가
+          if (!isPaused) {
+            // 전역 메시지 저장소에 추가
+            globalMessages.push(message)
+
+            // 메시지 리스너에게 알림
+            this.notifyMessageListeners(message)
+
+            // 메시지 업데이트 리스너에게 알림
+            this.notifyMessagesUpdateListeners(globalMessages)
+          }
         } catch (error) {
           console.error("WebSocket 메시지 처리 오류:", error)
         }
@@ -78,6 +144,29 @@ export class OcppWebSocketService {
     } catch (error) {
       console.error("WebSocket 연결 생성 오류:", error)
       this.notifyConnectionError("WebSocket 연결을 생성할 수 없습니다.")
+    }
+  }
+
+  // 재연결 스케줄링
+  private scheduleReconnect() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+    }
+
+    this.reconnectTimer = setTimeout(() => {
+      console.log("WebSocket 재연결 시도 중...")
+      this.connect()
+    }, this.reconnectInterval)
+  }
+
+  // 자동 재연결 설정
+  setAutoReconnect(enable: boolean) {
+    this.autoReconnect = enable
+
+    // 자동 재연결이 비활성화되면 예약된 재연결 취소
+    if (!enable && this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
     }
   }
 
@@ -122,6 +211,15 @@ export class OcppWebSocketService {
   // WebSocket 연결 해제
   disconnect() {
     if (this.socket) {
+      // 자동 재연결 비활성화
+      this.autoReconnect = false
+
+      // 예약된 재연결 취소
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer)
+        this.reconnectTimer = null
+      }
+
       this.socket.close()
       this.socket = null
     }
@@ -140,6 +238,18 @@ export class OcppWebSocketService {
   // 메시지 수신 이벤트 리스너 제거
   offMessage(listener: (message: OcppWebSocketMessage) => void) {
     this.messageListeners = this.messageListeners.filter((l) => l !== listener)
+  }
+
+  // 메시지 업데이트 이벤트 리스너 등록
+  onMessagesUpdate(listener: (messages: OcppWebSocketMessage[]) => void) {
+    this.messagesUpdateListeners.push(listener)
+    // 등록 시 현재 메시지 목록 전달
+    listener(globalMessages)
+  }
+
+  // 메시지 업데이트 이벤트 리스너 제거
+  offMessagesUpdate(listener: (messages: OcppWebSocketMessage[]) => void) {
+    this.messagesUpdateListeners = this.messagesUpdateListeners.filter((l) => l !== listener)
   }
 
   // 연결 상태 변경 이벤트 리스너 등록
@@ -165,6 +275,11 @@ export class OcppWebSocketService {
   // 메시지 리스너에게 알림
   private notifyMessageListeners(message: OcppWebSocketMessage) {
     this.messageListeners.forEach((listener) => listener(message))
+  }
+
+  // 메시지 업데이트 리스너에게 알림
+  private notifyMessagesUpdateListeners(messages: OcppWebSocketMessage[]) {
+    this.messagesUpdateListeners.forEach((listener) => listener([...messages]))
   }
 
   // 연결 상태 변경 리스너에게 알림

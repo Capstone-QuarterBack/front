@@ -49,72 +49,79 @@ export function ChargerPanel({ charger, data, apiData, showDetails = false, show
       {/* 사용중 상태인 충전기에는 현재 충전 정보 표시 */}
       {isOccupied && (
         <div className="mt-4">
-          <div className="bg-zinc-900 rounded-lg p-4">
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <div className="text-xs text-zinc-400">충전 시작 시간</div>
+          {apiData?.usages && apiData.usages.length > 0 ? (
+            <div className="bg-zinc-900 rounded-lg p-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  {apiData?.usages[0]?.chargeStartTime
-                    ? new Date(apiData.usages[0].chargeStartTime).toLocaleString()
-                    : data.stationDetails.chargeTime}
+                  <div className="text-xs text-zinc-400">충전 시작 시간</div>
+                  <div>
+                    {apiData?.usages[0]?.chargeStartTime
+                      ? new Date(apiData.usages[0].chargeStartTime).toLocaleString()
+                      : data.stationDetails.chargeTime}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-zinc-400">충전 전력량</div>
+                  <div>
+                    {apiData?.usages[0]?.chargedEnergy
+                      ? `${apiData.usages[0].chargedEnergy}(Wh)`
+                      : data.stationDetails.totalPower}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-zinc-400">충전 완료 시간</div>
+                  <div>
+                    {apiData?.usages[0]?.chargeEndTime
+                      ? new Date(apiData.usages[0].chargeEndTime).toLocaleString()
+                      : data.stationDetails.chargeEndTime}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-zinc-400">지불 비용</div>
+                  <div>
+                    {apiData?.usages[0]?.price ? `${apiData.usages[0].price} KRW` : data.stationDetails.maxPower}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-zinc-400">처리 상태 정보</div>
+                  <div className="text-green-500">승인완료</div>
+                </div>
+                <div>
+                  <div className="text-xs text-zinc-400">오류코드</div>
+                  <div>{apiData?.usages[0]?.errorCode || data.stationDetails.carId}</div>
                 </div>
               </div>
-              <div>
-                <div className="text-xs text-zinc-400">충전 전력량</div>
-                <div>
-                  {apiData?.usages[0]?.chargedEnergy
-                    ? `${apiData.usages[0].chargedEnergy}(kWh)`
-                    : data.stationDetails.totalPower}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-400">충전 완료 시간</div>
-                <div>
-                  {apiData?.usages[0]?.chargeEndTime
-                    ? new Date(apiData.usages[0].chargeEndTime).toLocaleString()
-                    : data.stationDetails.chargeEndTime}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-400">지불 비용</div>
-                <div>
-                  {apiData?.usages[0]?.price ? `${apiData.usages[0].price}(KRW)` : data.stationDetails.maxPower}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-400">처리 상태 정보</div>
-                <div className="text-green-500">승인완료</div>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-400">오류코드</div>
-                <div>{apiData?.usages[0]?.errorCode || data.stationDetails.carId}</div>
-              </div>
-            </div>
 
-            {/* 강조된 정보를 위한 별도의 네모칸 */}
-            <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 mt-2">
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <div className="text-xs text-zinc-400">차량 번호</div>
-                  <div className="font-medium text-amber-500">
-                    {apiData?.usages[0]?.carNumber || data.stationDetails.transactionId}
+              {/* 강조된 정보를 위한 별도의 네모칸 */}
+              <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 mt-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <div className="text-xs text-zinc-400">차량 번호</div>
+                    <div className="font-medium text-amber-500">
+                      {apiData?.usages[0]?.carNumber || data.stationDetails.transactionId}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-xs text-zinc-400">충전기 모델</div>
-                  <div className="font-medium text-green-500">
-                    {apiData?.usages[0]?.chargerModel || data.stationDetails.occupancyRate}
+                  <div>
+                    <div className="text-xs text-zinc-400">충전기 모델</div>
+                    <div className="font-medium text-green-500">
+                      {apiData?.usages[0]?.chargerModel || data.stationDetails.occupancyRate}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <div className="text-xs text-zinc-400">승인 번호</div>
-                  <div className="font-medium text-blue-400">
-                    {apiData?.usages[0]?.approvalNumber || data.stationDetails.totalRevenue}
+                  <div>
+                    <div className="text-xs text-zinc-400">승인 번호</div>
+                    <div className="font-medium text-blue-400">
+                      {apiData?.usages[0]?.approvalNumber || data.stationDetails.totalRevenue}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-zinc-900 rounded-lg p-6 mt-2 text-center">
+              <div className="text-zinc-300 text-lg">최근 데이터가 없습니다</div>
+              <div className="text-zinc-500 text-sm mt-2">충전 중이지만 데이터가 아직 수집되지 않았습니다</div>
+            </div>
+          )}
 
           {/* 사용중 충전기에도 과거 사용 내역 표시 */}
           {apiData && apiData.usages.length > 0 && (
@@ -126,16 +133,32 @@ export function ChargerPanel({ charger, data, apiData, showDetails = false, show
       )}
 
       {/* 사용불가 상태인 충전기에는 사용 내역만 표시 */}
-      {isUnavailable && apiData && apiData.usages.length > 0 && (
+      {isUnavailable && (
         <div className="mt-4">
-          <UsageHistory data={usageHistory} />
+          {apiData && apiData.usages.length > 0 ? (
+            <UsageHistory data={usageHistory} />
+          ) : (
+            <div className="bg-zinc-900 rounded-lg p-6 mt-2 text-center">
+              <div className="text-zinc-300 text-lg">최근 데이터가 없습니다</div>
+              <div className="text-zinc-500 text-sm mt-2">사용 불가 상태이며 이용 기록이 없습니다</div>
+            </div>
+          )}
         </div>
       )}
 
       {/* 사용가능 상태일 때는 과거 데이터와 월별 사용 내역 표시 */}
       {isAvailable && (
         <>
-          {showDetails && apiData && apiData.usages.length > 0 && <UsageHistory data={usageHistory} />}
+          {showDetails && apiData && apiData.usages.length > 0 ? (
+            <UsageHistory data={usageHistory} />
+          ) : (
+            showDetails && (
+              <div className="bg-zinc-900 rounded-lg p-6 mt-4 text-center">
+                <div className="text-zinc-300 text-lg">최근 데이터가 없습니다</div>
+                <div className="text-zinc-500 text-sm mt-2">사용 가능 상태이며 최근 이용 기록이 없습니다</div>
+              </div>
+            )
+          )}
           {showSummary && <StationSummary data={summaryData} />}
         </>
       )}

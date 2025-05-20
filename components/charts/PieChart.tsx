@@ -9,6 +9,44 @@ interface PieChartProps {
   height?: number
 }
 
+// 원형 그래프에서 단위 표시 개선을 위해 formatValue 함수를 추가합니다
+// 이 함수는 라벨과 값을 기반으로 적절한 단위를 추가합니다
+function formatValue(label: string, value: number): string {
+  // 전기/전력 관련 데이터는 Wh 단위 사용
+  if (
+    label.includes("충전량") ||
+    label.includes("방전량") ||
+    label.includes("전력") ||
+    label.includes("주간") ||
+    label.includes("야간")
+  ) {
+    return `${value.toLocaleString()} Wh`
+  }
+
+  // 비용/요금 관련 데이터는 KRW 단위 사용
+  else if (label.includes("비용") || label.includes("요금") || label.includes("수익") || label.includes("매출")) {
+    return `${value.toLocaleString()} KRW`
+  }
+
+  // 충전 결과 분포는 % 단위 사용
+  else if (label === "급속" || label === "완속") {
+    return `${value.toLocaleString()}%`
+  }
+
+  // 충전기 상태 분포는 개 단위 사용
+  else if (label === "정상" || label === "고장") {
+    return `${value.toLocaleString()} 개`
+  }
+
+  // 개수 관련 데이터는 개 단위 사용
+  else if (label.includes("횟수") || label.includes("개수") || label.includes("대수")) {
+    return `${value.toLocaleString()} 개`
+  }
+
+  // 기본값은 단위 없이 숫자만 반환
+  return value.toLocaleString()
+}
+
 export function PieChart({ data, width = 300, height = 300 }: PieChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -126,7 +164,23 @@ export function PieChart({ data, width = 300, height = 300 }: PieChartProps) {
         displayLabel = displayLabel.substring(0, 10) + "..."
       }
 
-      ctx.fillText(`${displayLabel} (${formattedValue})`, legendX + 18, y + 6)
+      // 값 포맷팅 시 단위 추가
+      let displayValue = formattedValue
+      // 충전소별 비용 분포인 경우 KRW 단위 추가
+      if (item.label.includes("충전소")) {
+        displayValue = `${item.value.toLocaleString()} KRW`
+      } else if (item.label === "주간" || item.label === "야간") {
+        // 시간대별 충전량인 경우 Wh 단위 추가
+        displayValue = `${item.value.toLocaleString()} Wh`
+      } else if (item.label === "정상" || item.label === "고장") {
+        // 충전기 상태 분포인 경우 개 단위 추가
+        displayValue = `${item.value.toLocaleString()} 개`
+      } else if (item.label === "급속" || item.label === "완속") {
+        // 충전 결과 분포인 경우 % 단위 추가
+        displayValue = `${item.value.toLocaleString()}%`
+      }
+
+      ctx.fillText(`${displayLabel} (${displayValue})`, legendX + 18, y + 6)
     })
   }, [data, width, height])
 

@@ -81,7 +81,7 @@ export function DailyInfo({ className = "", refreshInterval = 0 }: DailyInfoProp
             </div>
             <div className="flex justify-between items-center border-b border-zinc-700 pb-2">
               <span className="text-teal-500">Discharge</span>
-              <span className="text-teal-500 font-medium">{formatNumber(data.discharge * 1000)} Wh</span>
+              <span className="text-teal-500 font-medium">{formatNumber(data.discharge)} Wh</span>
             </div>
           </>
         ) : null}

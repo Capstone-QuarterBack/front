@@ -8,17 +8,7 @@ import { useState, useEffect } from "react"
 import { componentStyles } from "@/lib/utils/style-utils"
 import { COMPONENT_SIZES } from "@/lib/constants/theme"
 import { cn } from "@/lib/utils"
-import {
-  LayoutDashboard,
-  BarChart2,
-  History,
-  CreditCard,
-  Users,
-  Settings,
-  BarChart3,
-  Zap,
-  FileText,
-} from "lucide-react"
+import { LayoutDashboard, BarChart2, BarChart3, CreditCard, FileText, Settings, Users, Zap } from "lucide-react"
 
 // 사이드바 메뉴 아이템 타입 정의
 export interface SidebarMenuItem {
@@ -69,13 +59,6 @@ export function Sidebar({ menuItems = [], className = "", defaultCollapsed = fal
       label: "3D 시각화",
       href: "/station-3d",
       isActive: activeItem === "station-3d" || pathname === "/station-3d",
-    },
-    {
-      id: "history",
-      icon: <History className="w-4 h-4" />,
-      label: "동계 및 이력관리",
-      href: "/history",
-      isActive: activeItem === "history" || pathname === "/history",
     },
     {
       id: "transactions",

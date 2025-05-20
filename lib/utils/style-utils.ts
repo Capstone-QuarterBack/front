@@ -73,6 +73,7 @@ export function getResponsiveGridClass(config: {
 export const loadingStyles = {
   container: "absolute inset-0 flex items-center justify-center",
   spinner: "animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500",
+  smallSpinner: "animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500",
 }
 
 // 에러 상태 스타일
