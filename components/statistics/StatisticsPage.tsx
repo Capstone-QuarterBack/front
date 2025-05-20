@@ -37,7 +37,7 @@ import {
   type PowerTradingPriceData,
   type PowerTradingVolumeData,
 } from "@/services/statisticsApi"
-import { aggregateStatisticsData } from "@/lib/utils/chart-utils"
+import { aggregateStatisticsData, limitToLatestData } from "@/lib/utils/chart-utils"
 
 // filterLastSevenDays 함수에서 라벨 처리 부분을 수정합니다
 function filterLastSevenDays(data: StatisticsData | null, currentTimeRange: string): StatisticsData | null {
@@ -307,14 +307,13 @@ export default function StatisticsPage() {
         timeRange as "day" | "week" | "month" | "year",
       )
 
-      // 일간 데이터인 경우 최근 7일만 표시
-      // 모든 데이터에 대해 날짜 형식 변환 적용
-      processedCostData = filterLastSevenDays(processedCostData, timeRange)
-      processedVolumeData = filterLastSevenDays(processedVolumeData, timeRange)
-      processedInfoData = filterLastSevenDays(processedInfoData, timeRange)
-      processedStatusData = filterLastSevenDays(processedStatusData, timeRange)
-      processedTradingData = filterLastSevenDays(processedTradingData, timeRange)
-      processedOperatingRateData = filterLastSevenDays(processedOperatingRateData, timeRange)
+      // 모든 데이터에 대해 최신 7개만 표시하도록 제한
+      processedCostData = limitToLatestData(processedCostData, 7)
+      processedVolumeData = limitToLatestData(processedVolumeData, 7)
+      processedInfoData = limitToLatestData(processedInfoData, 7)
+      processedStatusData = limitToLatestData(processedStatusData, 7)
+      processedTradingData = limitToLatestData(processedTradingData, 7)
+      processedOperatingRateData = limitToLatestData(processedOperatingRateData, 7)
 
       // 주간 데이터인 경우 특별 처리 - API 데이터 사용
       if (timeRange === "week") {
@@ -415,13 +414,12 @@ export default function StatisticsPage() {
           timeRange as "day" | "week" | "month" | "year",
         )
 
-        // 일간 데이터인 경우 최근 7일만 표시
-        // 모든 데이터에 대해 날짜 형식 변환 적용
-        processedCostData = filterLastSevenDays(processedCostData, timeRange)
-        processedVolumeData = filterLastSevenDays(processedVolumeData, timeRange)
-        processedInfoData = filterLastSevenDays(processedInfoData, timeRange)
-        processedStatusData = filterLastSevenDays(processedStatusData, timeRange)
-        processedOperatingRateData = filterLastSevenDays(processedOperatingRateData, timeRange)
+        // 모든 데이터에 대해 최신 7개만 표시하도록 제한
+        processedCostData = limitToLatestData(processedCostData, 7)
+        processedVolumeData = limitToLatestData(processedVolumeData, 7)
+        processedInfoData = limitToLatestData(processedInfoData, 7)
+        processedStatusData = limitToLatestData(processedStatusData, 7)
+        processedOperatingRateData = limitToLatestData(processedOperatingRateData, 7)
 
         // 주간 데이터인 경우 특별 처리 - API 데이터 사용
         if (timeRange === "week") {
@@ -462,6 +460,9 @@ export default function StatisticsPage() {
 
         console.log("Processed trading data:", processedTradingData)
 
+        // 최신 7개만 표시하도록 제한
+        processedTradingData = limitToLatestData(processedTradingData, 7)
+
         // If we're in daily view, make sure we have data
         if (
           timeRange === "day" &&
@@ -490,14 +491,6 @@ export default function StatisticsPage() {
             ],
             pieChartData: [],
           }
-        }
-
-        // 주간 데이터인 경우 특별 처리
-        if (timeRange === "week") {
-          processedTradingData = filterLastSevenDays(processedTradingData, timeRange)
-        } else {
-          // 다른 시간 범위는 기존 처리 방식 유지
-          processedTradingData = filterLastSevenDays(processedTradingData, timeRange)
         }
 
         setAggregatedTradingData(processedTradingData)

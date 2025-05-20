@@ -32,6 +32,7 @@ function getWeek(dateStr: string): string {
 
 /**
  * 날짜별 데이터를 지정된 기간(일/주/월/년)으로 집계합니다.
+ * 모든 데이터를 처리하고 날짜 내림차순으로 정렬합니다.
  */
 export function aggregateDataByPeriod(
   data: { label: string; value: number }[],
@@ -39,9 +40,10 @@ export function aggregateDataByPeriod(
 ): { label: string; value: number }[] {
   if (!data || data.length === 0) return []
 
-  // 일별 데이터인 경우 그대로 반환 (필터링 없음)
+  // 일별 데이터인 경우 그대로 반환 (정렬만 수행)
   if (period === "day") {
-    return [...data].sort((a, b) => a.label.localeCompare(b.label))
+    // 날짜 기준 내림차순으로 정렬
+    return [...data].sort((a, b) => b.label.localeCompare(a.label))
   }
 
   const aggregated: Record<string, number> = {}
@@ -69,10 +71,10 @@ export function aggregateDataByPeriod(
     aggregated[key] += item.value
   })
 
-  // 결과를 배열로 변환하고 날짜순으로 정렬
+  // 결과를 배열로 변환하고 날짜 내림차순으로 정렬
   return Object.entries(aggregated)
     .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => a.label.localeCompare(b.label))
+    .sort((a, b) => b.label.localeCompare(a.label))
 }
 
 /**
@@ -147,5 +149,18 @@ export function aggregateStatisticsData(
     barChartData: aggregatedBarData,
     lineChartData: aggregatedLineData,
     pieChartData: data.pieChartData,
+  }
+}
+
+/**
+ * 차트 표시용으로 최신 데이터 N개만 필터링합니다.
+ */
+export function limitToLatestData(data: StatisticsData | null, limit = 7): StatisticsData | null {
+  if (!data) return null
+
+  return {
+    barChartData: data.barChartData.slice(0, limit),
+    lineChartData: data.lineChartData.slice(0, limit),
+    pieChartData: data.pieChartData, // 파이 차트는 제한하지 않음
   }
 }

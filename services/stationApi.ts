@@ -151,21 +151,25 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 
 // API 응답을 내부 형식으로 변환하는 함수
 function convertApiResponseToChartData(apiResponse: ApiStatisticsResponse): StatisticsData {
+  // 날짜 내림차순으로 정렬 (모든 데이터 처리)
+  const sortedBarData = [...apiResponse.barChartData].sort((a, b) => b.label.localeCompare(a.label))
+  const sortedLineData = [...apiResponse.lineChartData].sort((a, b) => b.label.localeCompare(a.label))
+
   // barChartData 변환
-  const barChartData = apiResponse.barChartData.map((item, index) => ({
+  const barChartData = sortedBarData.map((item, index) => ({
     x: index,
     y: item.value,
     label: item.label, // 원래 날짜 라벨 유지
   }))
 
   // lineChartData 변환
-  const lineChartData = apiResponse.lineChartData.map((item, index) => ({
+  const lineChartData = sortedLineData.map((item, index) => ({
     x: index,
     y: item.value,
     label: item.label, // 원래 날짜 라벨 유지
   }))
 
-  // pieChartData 변환
+  // pieChartData 변환 (파이 차트는 정렬 필요 없음)
   const pieChartData = apiResponse.pieChartData.map((item) => ({
     label: item.label,
     value: item.value,
