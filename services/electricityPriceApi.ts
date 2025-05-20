@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./apiConfig"
 /**
  * 전기 가격 관련 API 서비스
  */
@@ -19,7 +20,7 @@ export interface KepcoPrice {
    */
   export async function fetchKepcoPrice(): Promise<KepcoPrice> {
     try {
-      const response = await fetch("http://localhost:8080/api/dashboard/electricity-price/kepco-price")
+      const response = await fetch(`${API_BASE_URL}/dashboard/electricity-price/kepco-price`)
       if (!response.ok) {
         throw new Error("Failed to fetch KEPCO price")
       }
@@ -36,7 +37,7 @@ export interface KepcoPrice {
    */
   export async function fetchCsPrice(): Promise<CsPrice[]> {
     try {
-      const response = await fetch("http://localhost:8080/api/dashboard/electricity-price/cs-price")
+      const response = await fetch(`${API_BASE_URL}/dashboard/electricity-price/cs-price`)
       if (!response.ok) {
         throw new Error("Failed to fetch CS price")
       }
