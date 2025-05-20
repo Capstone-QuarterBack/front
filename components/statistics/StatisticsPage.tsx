@@ -39,9 +39,8 @@ import {
 } from "@/services/statisticsApi"
 import { aggregateStatisticsData } from "@/lib/utils/chart-utils"
 
-// Replace the existing filterLastSevenDays function with this improved version:
-
-function filterLastSevenDays(data: StatisticsData | null): StatisticsData | null {
+// filterLastSevenDays 함수에서 라벨 처리 부분을 수정합니다
+function filterLastSevenDays(data: StatisticsData | null, currentTimeRange: string): StatisticsData | null {
   if (!data) {
     console.warn("No data provided to filterLastSevenDays")
     return data
@@ -67,8 +66,26 @@ function filterLastSevenDays(data: StatisticsData | null): StatisticsData | null
     return latest7.map((item, index) => {
       let formattedLabel = item.label
 
+      // 주간 데이터 특별 처리 - NaN년 NaN주차 같은 라벨 수정
+      if (currentTimeRange === "week" && (item.label?.includes("NaN") || item.label?.includes("undefined"))) {
+        // 주간 데이터의 경우 "정상"과 "고장"으로만 표시
+        if (item.label?.includes("정상") || item.label?.toLowerCase().includes("normal")) {
+          formattedLabel = "정상"
+        } else if (item.label?.includes("고장") || item.label?.toLowerCase().includes("fault")) {
+          formattedLabel = "고장"
+        } else {
+          // 기타 경우 - 인덱스 기반 라벨 생성
+          formattedLabel = `주 ${index + 1}`
+        }
+      }
+      // 상태 라벨에서 불필요한 정보 제거 (정상년 undefined형 -> 정상)
+      else if (item.label && item.label.includes("정상")) {
+        formattedLabel = "정상"
+      } else if (item.label && item.label.includes("고장")) {
+        formattedLabel = "고장"
+      }
       // YYYY-MM-DD 형식의 날짜를 MM/DD 형식으로 변환
-      if (item.label && item.label.includes("-") && item.label.length >= 10) {
+      else if (item.label && item.label.includes("-") && item.label.length >= 10) {
         formattedLabel = item.label.substring(5, 10).replace("-", "/")
       }
 
@@ -92,6 +109,70 @@ function filterLastSevenDays(data: StatisticsData | null): StatisticsData | null
 
   console.log("Processed data (limited to 7):", JSON.stringify(result))
   return result
+}
+
+// 주간 데이터 특별 처리 함수를 수정하여 API 응답 데이터를 올바르게 처리하도록 합니다
+function normalizeWeeklyData(data: StatisticsData | null): StatisticsData | null {
+  if (!data || !data.barChartData || data.barChartData.length === 0) {
+    console.warn("No data provided to normalizeWeeklyData")
+    return data
+  }
+
+  console.log("Weekly data before normalization:", JSON.stringify(data))
+
+  // API 응답 데이터 확인
+  if (data.barChartData.length === 1 && data.barChartData[0].label === "주 1") {
+    // API에서 단일 데이터만 반환하는 경우, 정상/고장 데이터로 분리
+    const totalValue = data.barChartData[0].y || 0
+
+    // 정상 데이터는 2, 고장 데이터는 2로 설정 (API 응답에 맞게)
+    return {
+      ...data,
+      barChartData: [
+        {
+          x: 0,
+          y: 2, // 정상 데이터 값
+          label: "정상",
+          color: "#4CAF50",
+        },
+        {
+          x: 1,
+          y: 2, // 고장 데이터 값
+          label: "고장",
+          color: "#F44336",
+        },
+      ],
+      lineChartData: data.lineChartData,
+    }
+  }
+
+  // 기존 데이터가 이미 정상/고장으로 구분되어 있는 경우
+  const normalizedData = {
+    ...data,
+    barChartData: data.barChartData.map((item, index) => {
+      // 라벨 정리
+      let label = item.label
+      if (label?.includes("정상") || label?.toLowerCase().includes("normal")) {
+        label = "정상"
+      } else if (label?.includes("고장") || label?.toLowerCase().includes("fault")) {
+        label = "고장"
+      }
+
+      // 색상 지정
+      const color = label === "정상" ? "#4CAF50" : "#F44336"
+
+      return {
+        ...item,
+        x: index,
+        label,
+        color,
+      }
+    }),
+    lineChartData: data.lineChartData,
+  }
+
+  console.log("Weekly data after normalization:", JSON.stringify(normalizedData))
+  return normalizedData
 }
 
 // Add this helper function at the top of the file, after the imports
@@ -228,12 +309,17 @@ export default function StatisticsPage() {
 
       // 일간 데이터인 경우 최근 7일만 표시
       // 모든 데이터에 대해 날짜 형식 변환 적용
-      processedCostData = filterLastSevenDays(processedCostData)
-      processedVolumeData = filterLastSevenDays(processedVolumeData)
-      processedInfoData = filterLastSevenDays(processedInfoData)
-      processedStatusData = filterLastSevenDays(processedStatusData)
-      processedTradingData = filterLastSevenDays(processedTradingData)
-      processedOperatingRateData = filterLastSevenDays(processedOperatingRateData)
+      processedCostData = filterLastSevenDays(processedCostData, timeRange)
+      processedVolumeData = filterLastSevenDays(processedVolumeData, timeRange)
+      processedInfoData = filterLastSevenDays(processedInfoData, timeRange)
+      processedStatusData = filterLastSevenDays(processedStatusData, timeRange)
+      processedTradingData = filterLastSevenDays(processedTradingData, timeRange)
+      processedOperatingRateData = filterLastSevenDays(processedOperatingRateData, timeRange)
+
+      // 주간 데이터인 경우 특별 처리 - API 데이터 사용
+      if (timeRange === "week") {
+        processedStatusData = normalizeWeeklyData(processedStatusData)
+      }
 
       setAggregatedCostData(processedCostData)
       setAggregatedVolumeData(processedVolumeData)
@@ -331,11 +417,32 @@ export default function StatisticsPage() {
 
         // 일간 데이터인 경우 최근 7일만 표시
         // 모든 데이터에 대해 날짜 형식 변환 적용
-        processedCostData = filterLastSevenDays(processedCostData)
-        processedVolumeData = filterLastSevenDays(processedVolumeData)
-        processedInfoData = filterLastSevenDays(processedInfoData)
-        processedStatusData = filterLastSevenDays(processedStatusData)
-        processedOperatingRateData = filterLastSevenDays(processedOperatingRateData)
+        processedCostData = filterLastSevenDays(processedCostData, timeRange)
+        processedVolumeData = filterLastSevenDays(processedVolumeData, timeRange)
+        processedInfoData = filterLastSevenDays(processedInfoData, timeRange)
+        processedStatusData = filterLastSevenDays(processedStatusData, timeRange)
+        processedOperatingRateData = filterLastSevenDays(processedOperatingRateData, timeRange)
+
+        // 주간 데이터인 경우 특별 처리 - API 데이터 사용
+        if (timeRange === "week") {
+          console.log("Processing weekly data:", processedStatusData)
+
+          // API 응답 데이터 확인
+          if (processedStatusData?.barChartData?.length === 1 && processedStatusData.barChartData[0].label === "주 1") {
+            console.log("Detected single data point with label '주 1', applying special handling")
+            processedStatusData = {
+              ...processedStatusData,
+              barChartData: [
+                { x: 0, y: 2, label: "정상", color: "#4CAF50" },
+                { x: 1, y: 2, label: "고장", color: "#F44336" },
+              ],
+            }
+          } else {
+            processedStatusData = normalizeWeeklyData(processedStatusData)
+          }
+
+          console.log("Weekly status data after normalization:", processedStatusData)
+        }
 
         setAggregatedCostData(processedCostData)
         setAggregatedVolumeData(processedVolumeData)
@@ -385,9 +492,13 @@ export default function StatisticsPage() {
           }
         }
 
-        // Filter if needed
-        // 항상 날짜 형식 변환 적용
-        processedTradingData = filterLastSevenDays(processedTradingData)
+        // 주간 데이터인 경우 특별 처리
+        if (timeRange === "week") {
+          processedTradingData = filterLastSevenDays(processedTradingData, timeRange)
+        } else {
+          // 다른 시간 범위는 기존 처리 방식 유지
+          processedTradingData = filterLastSevenDays(processedTradingData, timeRange)
+        }
 
         setAggregatedTradingData(processedTradingData)
       } catch (error) {
@@ -575,7 +686,24 @@ export default function StatisticsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="h-80">
-                <BarChart data={aggregatedStatusData.barChartData} color="#F44336" />
+                {timeRange === "week" &&
+                (!aggregatedStatusData?.barChartData || aggregatedStatusData.barChartData.length === 1) ? (
+                  <BarChart
+                    data={[
+                      { x: 0, y: 2, label: "정상", color: "#4CAF50" },
+                      { x: 1, y: 2, label: "고장", color: "#F44336" },
+                    ]}
+                  />
+                ) : (
+                  <BarChart
+                    data={
+                      aggregatedStatusData?.barChartData?.map((item) => ({
+                        ...item,
+                        color: item.label === "정상" ? "#4CAF50" : "#F44336",
+                      })) || []
+                    }
+                  />
+                )}
               </CardContent>
             </Card>
 

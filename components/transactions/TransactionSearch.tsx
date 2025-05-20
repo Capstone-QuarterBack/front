@@ -46,13 +46,6 @@ export function TransactionSearch({ onStationSearch, onApprovalSearch, currentSt
             검색
           </Button>
         </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="h-9 flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span>+ 내역 추가</span>
-          </Button>
-        </div>
       </div>
 
       {/* Approval Number Search - Shorter version */}

@@ -278,13 +278,6 @@ export default function TransactionHistory() {
             <Tabs defaultValue="충전 내역" className="w-full">
               <TabsList className="bg-zinc-800 border-b border-zinc-700 w-full justify-start h-auto p-0">
                 <TabsTrigger
-                  value="ESS 상태"
-                  className="px-4 py-2 data-[state=active]:border-b-2 data-[state=active]:border-amber-500 rounded-none"
-                  onClick={() => setActiveTab("ESS 상태")}
-                >
-                  ESS 상태
-                </TabsTrigger>
-                <TabsTrigger
                   value="충전 내역"
                   className="px-4 py-2 data-[state=active]:border-b-2 data-[state=active]:border-amber-500 rounded-none"
                   onClick={() => setActiveTab("충전 내역")}

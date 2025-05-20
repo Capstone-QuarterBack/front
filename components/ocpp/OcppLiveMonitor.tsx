@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { OcppLogDetailModal } from "./OcppLogDetailModal"
 import { OcppWebSocketService, type OcppWebSocketMessage } from "@/services/ocppWebSocketService"
 import { formatTimestamp } from "@/lib/utils/date-utils"
-import { Download, Pause, Play, RefreshCw, Trash2, WifiOff } from "lucide-react"
+import { Pause, Play, RefreshCw, Trash2, WifiOff } from "lucide-react"
 
 export default function OcppLiveMonitor() {
   const [isConnected, setIsConnected] = useState(false)
@@ -108,19 +108,6 @@ export default function OcppLiveMonitor() {
 
   const handleClearMessages = () => {
     setMessages([])
-  }
-
-  const handleExportMessages = () => {
-    const data = JSON.stringify(messages, null, 2)
-    const blob = new Blob([data], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `ocpp-logs-${new Date().toISOString()}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
   }
 
   // 메시지 클릭 핸들러 수정
@@ -365,11 +352,6 @@ export default function OcppLiveMonitor() {
             <Button variant="outline" onClick={handleClearMessages}>
               <Trash2 className="mr-2 h-4 w-4" />
               지우기
-            </Button>
-
-            <Button variant="outline" onClick={handleExportMessages} disabled={messages.length === 0}>
-              <Download className="mr-2 h-4 w-4" />
-              내보내기
             </Button>
           </div>
         </div>

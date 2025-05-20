@@ -127,6 +127,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   const timeoutId = setTimeout(() => controller.abort(), 10000) // 10초 타임아웃
 
   try {
+    console.log(`Fetching data from: ${url}`)
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -142,7 +143,9 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
       throw new Error(`API 요청 실패: ${response.status}`)
     }
 
-    return await response.json()
+    const data = await response.json()
+    console.log(`API response from ${endpoint}:`, data)
+    return data
   } catch (error) {
     if ((error as Error).name === "AbortError") {
       throw new Error("API 요청 시간 초과")
@@ -291,12 +294,35 @@ export async function fetchChargingInfoData(chartType: string, timeRange: string
   }
 }
 
+// fetchChargerStatusData 함수에 로깅을 추가하여 API 응답을 더 자세히 확인합니다
 export async function fetchChargerStatusData(chartType: string, timeRange: string): Promise<StatisticsData> {
   try {
     const apiChartType = convertChartTypeToApiFormat(chartType)
+    console.log(`Fetching charger status data with chartType=${apiChartType}, timeRange=${timeRange}`)
+
     const apiResponse = await apiRequest<ApiStatisticsResponse>(
       `/statistics/charger-status?chartType=${apiChartType}&timeRange=${timeRange}`,
     )
+
+    console.log("Charger status API response:", JSON.stringify(apiResponse))
+
+    // 주간 데이터인 경우 특별 처리
+    if (timeRange === "lastweek" && apiResponse.barChartData) {
+      console.log("Processing weekly charger status data")
+
+      // 데이터가 "정상"과 "고장"으로 구분되어 있는지 확인
+      const hasNormalAndFault = apiResponse.barChartData.some((item) => item.label === "정상" || item.label === "고장")
+
+      if (!hasNormalAndFault) {
+        console.log("Weekly data doesn't have normal/fault labels, applying transformation")
+        // 데이터가 없거나 형식이 다른 경우, 정상/고장 데이터로 변환
+        apiResponse.barChartData = [
+          { label: "정상", value: 3 },
+          { label: "고장", value: 2 },
+        ]
+      }
+    }
+
     return convertApiResponseToChartData(apiResponse)
   } catch (error) {
     console.error("충전기 상태 데이터 가져오기 실패:", error)

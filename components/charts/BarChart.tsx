@@ -7,7 +7,7 @@ import type { ChartData } from "@/types/chart"
 Chart.register(...registerables)
 
 interface BarChartProps {
-  data: ChartData[]
+  data: (ChartData & { color?: string })[]
   color?: string
 }
 
@@ -39,8 +39,8 @@ export function BarChart({ data, color = "#4CAF50" }: BarChartProps) {
           {
             label: "값",
             data: values,
-            backgroundColor: color,
-            borderColor: color,
+            backgroundColor: data.map((item) => item.color || color),
+            borderColor: data.map((item) => item.color || color),
             borderWidth: 1,
             borderRadius: 4,
             barThickness: data.length > 20 ? "flex" : 30, // 데이터가 많으면 자동 조정

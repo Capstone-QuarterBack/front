@@ -19,7 +19,7 @@ export function BatteryStatus({ data, stationId }: BatteryStatusProps) {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 배터리 퍼센트 값 (기본값 또는 API��서 가져온 값)
+  // 배터리 퍼센트 값 (기본값 또는 API서 가져온 값)
   const batteryPercentage = chargingHistory?.essValue
     ? Number.parseFloat(chargingHistory.essValue)
     : data?.batteryPercentage || 75
@@ -77,13 +77,22 @@ export function BatteryStatus({ data, stationId }: BatteryStatusProps) {
       <h3 className="text-lg font-bold mb-4 border-b border-zinc-700 pb-2">ESS 배터리 상태</h3>
 
       <div className="mb-6 flex justify-center">
-        <div className="relative w-48 h-20 border-2 border-white rounded-r-full rounded-l-full flex items-center justify-center">
-          <div
-            className="absolute left-0 top-0 bottom-0 bg-green-500 rounded-l-full"
-            style={{ width: `${batteryPercentage}%` }}
-          ></div>
-          <span className="relative z-10 text-xl font-bold">{batteryPercentage}%</span>
-          <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 w-4 h-8 bg-white rounded-r-sm"></div>
+        <div className="relative flex items-center">
+          {/* Main battery body */}
+          <div className="relative w-48 h-20 border-2 border-white rounded-full flex items-center justify-center overflow-hidden">
+            {/* Battery fill */}
+            <div
+              className="absolute left-0 top-0 bottom-0 bg-green-500 rounded-full"
+              style={{
+                width: `${Math.min(batteryPercentage, 100)}%`,
+                transition: "width 0.5s ease-in-out",
+              }}
+            ></div>
+            {/* Battery percentage text */}
+            <span className="relative z-10 text-xl font-bold">{batteryPercentage}%</span>
+          </div>
+          {/* Battery terminal */}
+          <div className="h-10 w-3 bg-white rounded-r-md ml-1 border-2 border-white"></div>
         </div>
       </div>
 

@@ -37,7 +37,7 @@ export function ElectricityTrading() {
   const latestCsPrice = csPrices.length > 0 ? csPrices[0] : null
 
   const buyData = {
-    title: "한국 전력 공사",
+    title: "한국 전력 공사 (Wh)",
     amount: `₩ ${kepcoPrice ? kepcoPrice.kepcoPrice : "로딩 중..."}`,
     hideTimeList: true, // 날짜 정보 숨김
   }
